@@ -1,4 +1,4 @@
-export function uniqTransactionId() {
+export function uniqTransactionId(index = '') {
   // Get the first 6 digits of the current timestamp in milliseconds
   const timestampPart = Date.now().toString().slice(0, 6);
 
@@ -11,7 +11,7 @@ export function uniqTransactionId() {
   }
 
   // Combine both parts
-  return timestampPart + alphabetPart;
+  return timestampPart + alphabetPart + index;
 }
 export function getCurrentTimestamp() {
   return Math.floor(Date.now() / 1000); // Returns the current timestamp in seconds

@@ -15,8 +15,10 @@ import { useEffect, useState } from 'react';
 const LiveBTCPrice = () => {
   const [price, setPrice] = useState(0);
   const [limitPrice, setLimitPrice] = useState(price);
-  const [algoTrade, setAlgoTrade] = useState(false);
+  const [profitTarget, setProfitTarget] = useState(5);
+  const [algoTrade, setAlgoTrade] = useState(true);
   const [executedOrderList, setExecutedOrderList] = useState([]);
+  const [pandingOrderList, setPandingOrderList] = useState([]);
   const [algoOrderList, setAlgoOrderList] = useState([
     {
       type: 1,
@@ -50,24 +52,6 @@ const LiveBTCPrice = () => {
     },
   ]);
 
-  useEffect(() => {
-    // Create a new WebSocket connection
-    const socket = new WebSocket(
-      'wss://stream.binance.com:9443/ws/btcusdt@trade',
-    );
-
-    // Listen for messages from the server
-    socket.onmessage = event => {
-      const data = JSON.parse(event.data);
-      const currentPrice = parseFloat(data.p).toFixed(2); // Price is in the 'p' field
-      setPrice(currentPrice);
-    };
-
-    return () => {
-      socket.close();
-    };
-  }, []);
-
   const OnTrade = ({ type }) => {
     const newTrade = {
       type: type,
@@ -80,23 +64,37 @@ const LiveBTCPrice = () => {
     };
     setOrderList([...orderList, newTrade]);
   };
-  const OnAutoOrder = ({ type, limit }) => {
+  const OnAutoOrder = ({ type, limit, id, index = '' }) => {
     const newTrade = {
       type: type,
       tradeType: type == 2 ? 'sell' : 'buy',
       price: price,
-      id: uniqTransactionId(),
+      id: uniqTransactionId(index),
       profit: 2,
       status: 2,
       time: getCurrentTimestamp(),
       limit: limit,
     };
     setAlgoOrderList([...algoOrderList, newTrade]);
+    setPandingOrderList(pandingOrderList.filter(trade => trade.id !== id));
+  };
+  const OnPandingOrder = ({ type, limit, index = '' }) => {
+    const newTrade = {
+      type: type,
+      tradeType: type == 2 ? 'sell' : 'buy',
+      price: price,
+      id: uniqTransactionId(index),
+      profit: 2,
+      status: 2,
+      time: getCurrentTimestamp(),
+      limit: limit,
+    };
+    setPandingOrderList([...pandingOrderList, newTrade]);
   };
 
   const OnCloseTrade = ({ id }) => {
-    if (algoTrade) {
-      const updateTrade = algoOrderList.filter(trade => trade.id == id)[0];
+    const updateTrade = algoOrderList.filter(trade => trade.id == id)[0];
+    if (algoTrade && updateTrade) {
       setExecutedOrderList([
         ...executedOrderList,
         {
@@ -111,7 +109,7 @@ const LiveBTCPrice = () => {
         },
       ]);
       setAlgoOrderList(algoOrderList.filter(trade => trade.id !== id));
-    } else {
+    } else if (updateTrade) {
       const updateTrade = orderList.filter(trade => trade.id == id)[0];
       setExecutedOrderList([
         ...executedOrderList,
@@ -130,6 +128,69 @@ const LiveBTCPrice = () => {
     }
   };
 
+  useEffect(() => {
+    // Create a new WebSocket connection
+    const socket = new WebSocket(
+      'wss://stream.binance.com:9443/ws/btcusdt@trade',
+    );
+
+    // Listen for messages from the server
+    socket.onmessage = event => {
+      const data = JSON.parse(event.data);
+      const currentPrice = parseFloat(data.p).toFixed(2); // Price is in the 'p' field
+      setPrice(currentPrice);
+    };
+
+    return () => {
+      socket.close();
+    };
+  }, []);
+  useEffect(() => {
+    if (algoTrade) {
+      setLimitPrice(price);
+    }
+  }, [algoTrade]);
+  useEffect(() => {
+    if (algoTrade && pandingOrderList.length > 0) {
+      for (let index = 0; index < pandingOrderList.length; index++) {
+        // const element = array[index];
+        const element = pandingOrderList[index];
+        if (element.type == 1 && price - element.limit > 0) {
+          OnAutoOrder({
+            type: element.type,
+            limit: element.limit,
+            id: element.id,
+          });
+        } else if (element.type == 2 && element.limit - price > 0) {
+          OnAutoOrder({
+            type: element.type,
+            limit: element.limit,
+            id: element.id,
+          });
+        }
+      }
+    }
+  }, [price]);
+  useEffect(() => {
+    if (algoTrade && algoOrderList.length > 0) {
+      for (let index = 0; index < algoOrderList.length; index++) {
+        // const element = array[index];
+        const element = algoOrderList[index];
+        // save from loss
+        if (element.type == 1 && price - element.price < 0) {
+          OnCloseTrade({ id: element.id });
+        } else if (element.type == 2 && element.price - price < 0) {
+          OnCloseTrade({ id: element.id });
+        }
+        // take profit
+        if (element.type == 1 && price - element.price > profitTarget) {
+          OnCloseTrade({ id: element.id });
+        } else if (element.type == 2 && element.price - price > profitTarget) {
+          OnCloseTrade({ id: element.id });
+        }
+      }
+    }
+  }, [price]);
   return (
     <div class='container mt-5'>
       <div className='d-flex justify-content-between'>
@@ -158,11 +219,19 @@ const LiveBTCPrice = () => {
             onChange={e => setLimitPrice(e.target.value)}
           />
           <br />
+          <input
+            className={algoTrade ? 'form-control' : 'd-none'}
+            type='number'
+            placeholder='Limit Price'
+            value={profitTarget}
+            onChange={e => setProfitTarget(e.target.value)}
+          />
+          <br />
           <button
             class='btn btn-success '
             onClick={() =>
               algoTrade
-                ? OnAutoOrder({ type: 1, limit: limitPrice })
+                ? OnPandingOrder({ type: 1, limit: limitPrice })
                 : OnTrade({ type: 1 })
             }
           >
@@ -173,12 +242,14 @@ const LiveBTCPrice = () => {
             class='btn btn-danger '
             onClick={() =>
               algoTrade
-                ? OnAutoOrder({ type: 2, limit: limitPrice })
+                ? OnPandingOrder({ type: 2, limit: limitPrice })
                 : OnTrade({ type: 2 })
             }
           >
             Sell
           </button>
+          &nbsp;&nbsp;
+          <button class='btn btn-light '>Combo</button>
         </div>
       </div>
       <div>
@@ -250,6 +321,36 @@ const LiveBTCPrice = () => {
                         onClick={() => OnCloseTrade({ id: trade.id })}
                       >
                         {trade.type == 2 ? 'Buy' : 'Sele'}
+                      </button>
+                    ) : (
+                      formatToTwoDecimals(trade?.profit)
+                    )}
+                  </td>
+                </tr>
+              ))}
+              <tr>
+                <td colspan={6}>Panding orders</td>
+              </tr>
+              {pandingOrderList.map((trade, index) => (
+                <tr key={index}>
+                  <td onClick={() => console.log(trade)}>{index + 1}</td>
+                  <td>{trade.tradeType}</td>
+                  <td>{formatToTwoDecimals(trade.price)}</td>
+                  <td>
+                    {formatToTwoDecimals(
+                      trade.type == 1
+                        ? price - trade.price
+                        : trade.price - price,
+                    )}
+                  </td>
+                  <td>{convertTime(trade.time)}</td>
+                  <td>
+                    {trade.status == 2 ? (
+                      <button
+                        class={`btn btn-sm   ${'btn-secondary'}`}
+                        // onClick={() => OnCloseTrade({ id: trade.id })}
+                      >
+                        Cancel order
                       </button>
                     ) : (
                       formatToTwoDecimals(trade?.profit)
