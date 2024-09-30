@@ -94,6 +94,8 @@ const LiveBTCPrice = () => {
 
   const OnCloseTrade = ({ id }) => {
     const updateTrade = algoOrderList.filter(trade => trade.id == id)[0];
+    const updateTrade2 = orderList.filter(trade => trade.id == id)[0];
+    console.log(algoTrade, updateTrade);
     if (algoTrade && updateTrade) {
       setExecutedOrderList([
         ...executedOrderList,
@@ -109,7 +111,8 @@ const LiveBTCPrice = () => {
         },
       ]);
       setAlgoOrderList(algoOrderList.filter(trade => trade.id !== id));
-    } else if (updateTrade) {
+    } else if (updateTrade2) {
+      console.log('2nd', orderList, id);
       const updateTrade = orderList.filter(trade => trade.id == id)[0];
       setExecutedOrderList([
         ...executedOrderList,
@@ -190,6 +193,10 @@ const LiveBTCPrice = () => {
         }
       }
     }
+  }, [price]);
+
+  useEffect(() => {
+    setLimitPrice(price);
   }, [price]);
   return (
     <div class='container mt-5'>
