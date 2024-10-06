@@ -3,16 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3008",
+    "dev": "next dev",
     "build": "next build",
-    "start": "next start -p 3008",
+    "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
     "@tinymce/tinymce-react": "^4.3.0",
     "ascii-decimal": "^1.0.0",
-    "cors": "^2.8.5",
     "crypto": "^1.0.1",
+    "eiows": "^4.0.0",
     "ejs": "^3.1.10",
     "eslint": "8.57.0",
     "ethereum-address": "^0.0.4",
@@ -38,7 +38,7 @@
     "react-paginate": "^8.2.0",
     "react-select": "^5.7.5",
     "serverless-mysql": "^1.5.5",
-    "socket.io": "^4.6.1",
+    "socket.io": "^4.8.0",
     "socket.io-client": "^2.5.0",
     "speakeasy": "^2.0.0",
     "sweetalert2": "^11.12.4"
