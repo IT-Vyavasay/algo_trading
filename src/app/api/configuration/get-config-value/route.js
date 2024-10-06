@@ -14,7 +14,12 @@ export async function GET(req, res) {
       [adm.data.id],
     );
 
-    return NextResponse.json(wallet_data?.wallet_balance, { status: 200 });
+    return NextResponse.json(
+      {
+        wallet_amount: wallet_data,
+      },
+      { status: 200 },
+    );
   } catch (e) {
     console.log('Error=>', e);
   }
