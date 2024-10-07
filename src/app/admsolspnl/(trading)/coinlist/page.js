@@ -13,7 +13,13 @@ import { fetchApi } from '../../../../utils/frondend';
 import Loader from '../../../../components/include/Loader';
 import { useAuthContext } from '../../../../context/auth';
 import Modal from 'react-bootstrap/Modal';
-const CoinList = () => {
+const CoinList = ({ option }) => {
+  const tempOption = {
+    title: '',
+    setMultiLoader: {},
+    multiLoader: { TradeLoader: true },
+  };
+  const { title, setMultiLoader, multiLoader } = option ? option : tempOption;
   const { setAuthTkn, setPageLoader } = useAuthContext();
   const [show, setShow] = useState(false);
   const [loader, setLoader] = useState(false);
@@ -43,19 +49,15 @@ const CoinList = () => {
   };
 
   const handleSubmit = async data => {
-    console.log(data);
     if (!loading) {
       try {
-        validate_string(`${coin_modal_data.symbole}`, 'symbole');
-        validate_string(
-          `${coin_modal_data.latestTradedPrice}`,
-          'latest tradedP price',
-        );
-        validate_string(`${coin_modal_data.tradeTime}`, 'trade time');
-        validate_string(`${coin_modal_data.tradeType}`, 'trade type');
-        validate_string(`${coin_modal_data.tradOnLTP}`, 'tradOnLTP');
-        validate_string(`${coin_modal_data.quantity}`, 'quantity');
-        validate_string(`${coin_modal_data.targetPrice}`, 'target price');
+        validate_string(`${data.symbole}`, 'symbole');
+        validate_string(`${data.latestTradedPrice}`, 'latest tradedP price');
+        validate_string(`${data.tradeTime}`, 'trade time');
+        validate_string(`${data.tradeType}`, 'trade type');
+        validate_string(`${data.tradOnLTP}`, 'tradOnLTP');
+        validate_string(`${data.quantity}`, 'quantity');
+        validate_string(`${data.targetPrice}`, 'target price');
       } catch (e) {
         toast.error(e);
         return false;
@@ -63,22 +65,30 @@ const CoinList = () => {
 
       setLoading(true);
       let bodyData = {
-        symbole: coin_modal_data.symbole,
-        latestTradedPrice: coin_modal_data.latestTradedPrice,
-        quantity: coin_modal_data.quantity,
-        tradeTime: coin_modal_data.tradeTime,
-        tradeType: coin_modal_data.tradeType == 'buy' ? 1 : 0,
-        tradOnLTP: coin_modal_data.tradOnLTP,
-        targetPrice: coin_modal_data.targetPrice,
+        symbole: data.symbole,
+        latestTradedPrice: data.latestTradedPrice,
+        quantity: data.quantity,
+        tradeTime: data.tradeTime,
+        tradeType: data.tradeType == 'buy' ? 0 : 1,
+        tradOnLTP: data.tradOnLTP,
+        targetPrice: data.targetPrice,
       };
       const add_user = await fetchApi(
-        'trading/manage-trade/add-trade',
+        data.tradOnLTP == 1
+          ? 'trading/manage-trade/add-trade'
+          : 'trading/manage-trade/panding-order/add-panding-order',
         JSON.stringify(bodyData),
       );
       setLoading(false);
       if (add_user?.statusCode == 200) {
         toast.success(add_user?.data?.message);
         set_coin_modal_data({});
+        const loadeData =
+          data.tradOnLTP == 1 ? 'TradeLoader' : 'PandingOrderLoader';
+        setMultiLoader({
+          ...multiLoader,
+          [loadeData]: !multiLoader[loadeData],
+        });
         handleClose();
       } else {
         if (add_user.data.message == 'Unauthorized') {
@@ -126,20 +136,22 @@ const CoinList = () => {
   return (
     <div className='content-body btn-page'>
       <Toaster position='top-right' reverseOrder={false} />
-      <div className='container-fluid p-4'>
+      <div className={`container-fluid ${title !== 'incard' && 'p-4'}`}>
         <div className='row'>
-          <h3
-            className='page-title-main'
-            onClick={() => console.log(cryptoData)}
-          >
-            Manage Coin
-          </h3>
+          {title !== 'incard' && (
+            <h3 className='page-title-main' onClick={() => console.log(title)}>
+              Manage Coin
+            </h3>
+          )}
 
-          <div className='col-lg-12'>
-            <div className='card mt-4 mb-4'>
-              <div className='card-header d-block'>
-                <div className='row'></div>
-              </div>
+          <div className={`col-lg-12 ${title == 'incard' && 'p-0'}`}>
+            <div className={`card ${title !== 'incard' && 'mt-4 mb-4'} `}>
+              {title == 'incard' && (
+                <div className='card-header d-flex align-items-center '>
+                  <span className='mdi mdi-bitcoin  dashboard-voucher-icon' />
+                  <h3> Manage Coin</h3>
+                </div>
+              )}
               <div className='card-body'>
                 <div className='table-responsive position-relative'>
                   <table
@@ -241,6 +253,23 @@ const CoinList = () => {
                                         </span>{' '}
                                         Sell
                                       </button>
+                                      <button
+                                        className='btn btn-secondary waves-effect waves-light'
+                                        onClick={() =>
+                                          handleShow({
+                                            ...d,
+                                            tradeType: 'combo',
+                                          })
+                                        }
+                                        data-toggle='modal'
+                                        data-target='#myModal'
+                                      >
+                                        {' '}
+                                        <span className='btn-label'>
+                                          <i className='mdi mdi-plus-box-multiple'></i>
+                                        </span>{' '}
+                                        Combo
+                                      </button>
                                     </div>
                                   </div>
                                 </td>
@@ -290,7 +319,11 @@ const CoinList = () => {
       <Modal show={show} onHide={handleClose}>
         <Modal.Header>
           <Modal.Title onClick={() => console.log(coin_modal_data)}>
-            {coin_modal_data?.tradeType == 'buy' ? 'Buy' : 'Sell'}{' '}
+            {coin_modal_data?.tradeType == 'buy'
+              ? 'Buy'
+              : coin_modal_data?.tradeType == 'combo'
+              ? 'Combo'
+              : 'Sell'}{' '}
             {coin_modal_data?.symbole}
           </Modal.Title>
           <span className='modalCloseBtn' onClick={handleClose}>
@@ -426,11 +459,20 @@ const CoinList = () => {
             className={`btn btn-bordered-${
               coin_modal_data?.tradeType == 'buy' ? 'success' : 'danger'
             } waves-effect search-btn waves-light loadingButton`}
-            onClick={() => handleSubmit(coin_modal_data)}
+            onClick={() => {
+              coin_modal_data?.tradeType == 'combo'
+                ? handleSubmit({ ...coin_modal_data, tradeType: 'buy' }) &&
+                  handleSubmit({ ...coin_modal_data, tradeType: 'sell' })
+                : handleSubmit(coin_modal_data);
+            }}
           >
             {' '}
             {loading && <Loader />}{' '}
-            {coin_modal_data?.tradeType == 'buy' ? 'Buy' : 'Sell'}
+            {coin_modal_data?.tradeType == 'buy'
+              ? 'Buy'
+              : coin_modal_data?.tradeType == 'combo'
+              ? 'Combo Trade'
+              : 'Sell'}
           </button>
         </Modal.Footer>
       </Modal>

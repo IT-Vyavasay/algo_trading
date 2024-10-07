@@ -18,7 +18,13 @@ const moment = require('moment');
 moment.suppressDeprecationWarnings = true;
 import ReactPaginate from 'react-paginate';
 import Flatpickr from 'react-flatpickr';
-const TradeList = () => {
+const TradeList = ({ option }) => {
+  const tempOption = {
+    title: '',
+    setMultiLoader: {},
+    multiLoader: { TradeLoader: true },
+  };
+  const { title, setMultiLoader, multiLoader } = option ? option : tempOption;
   const { setAuthTkn, setPageLoader } = useAuthContext();
   const [page, setPage] = useState(0);
   const [totalPage, setTotalPage] = useState(0);
@@ -137,7 +143,7 @@ const TradeList = () => {
 
   useEffect(() => {
     GetNotifyEmailList();
-  }, [page, order, orderClm]);
+  }, [page, order, orderClm, multiLoader.TradeLoader]);
 
   useEffect(() => {
     const ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
@@ -177,11 +183,23 @@ const TradeList = () => {
     if (tradeType == 0) {
       const total =
         parseFloat(latestTradedPrice - targetPrice) * parseInt(quantity);
-      return total.toFixed(2);
+      return (
+        <span
+          className={`badge bg-${total.toFixed(2) > 0 ? 'success' : 'danger'}`}
+        >
+          {total.toFixed(2)}
+        </span>
+      );
     } else {
       const total =
         parseFloat(targetPrice - latestTradedPrice) * parseInt(quantity);
-      return total.toFixed(2);
+      return (
+        <span
+          className={`badge bg-${total.toFixed(2) > 0 ? 'success' : 'danger'}`}
+        >
+          {total.toFixed(2)}
+        </span>
+      );
     }
   };
 
@@ -229,6 +247,10 @@ const TradeList = () => {
       setLoading(false);
       setSelectRecId('');
       GetNotifyEmailList();
+      setMultiLoader({
+        ...multiLoader,
+        CloseTradeLoader: !multiLoader.CloseTradeLoader,
+      });
       if (add_user?.statusCode == 200) {
         toast.success(add_user?.data?.message);
         // set_coin_modal_data({});
@@ -247,21 +269,26 @@ const TradeList = () => {
   return (
     <div className='content-body btn-page'>
       <Toaster position='top-right' reverseOrder={false} />
-      <div className='container-fluid p-4'>
+      <div className={`container-fluid ${title !== 'incard' && 'p-4'}`}>
         <div className='row'>
-          <h3
-            className='page-title-main'
-            onClick={() => console.log(cryptoData)}
-          >
-            Active Trade List
-          </h3>
+          {title !== 'incard' && (
+            <h3 className='page-title-main' onClick={() => console.log(title)}>
+              Active Trade List
+            </h3>
+          )}
 
-          <div className='col-lg-12'>
-            <div className='card mt-4 mb-4'>
+          <div className={`col-lg-12 ${title == 'incard' && 'p-0'}`}>
+            <div className={`card ${title !== 'incard' && 'mt-4 mb-4'} `}>
               <div className='card-header d-block'>
+                {title == 'incard' && (
+                  <div className='d-flex align-items-center '>
+                    <span className='mdi mdi-radioactive  dashboard-voucher-icon pl-0' />
+                    <h3>Active Trade List</h3>
+                  </div>
+                )}
                 <div className='row'>
                   <div className='col-xl-2 col-lg-6 col-md-4 col-12 col-sm-6 my-2 custom'>
-                    <label className='form-label'>Subscribe On</label>
+                    <label className='form-label'>Traded On</label>
                     <Flatpickr
                       className='form-control'
                       options={{
@@ -370,6 +397,12 @@ const TradeList = () => {
                         <th
                           scope='col'
                           className='text-center cursor-pointer text-nowrap'
+                        >
+                          Current Price
+                        </th>
+                        <th
+                          scope='col'
+                          className='text-center cursor-pointer text-nowrap'
                           onClick={() => sortData(3, order == 0 ? 1 : 0)}
                         >
                           Profit/Loss
@@ -449,6 +482,12 @@ const TradeList = () => {
                                   {d?.targetPrice ? d?.targetPrice : '-'}{' '}
                                 </td>
                                 <td className='text-center text-nowrap'>
+                                  {getCoinDetails(
+                                    d?.symbole,
+                                    'latestTradedPrice',
+                                  )}
+                                </td>
+                                <td className='text-center text-nowrap'>
                                   {getProfitLoss(
                                     d?.tradeType,
                                     d?.targetPrice,
@@ -463,7 +502,13 @@ const TradeList = () => {
                                   {d?.quantity ? d?.quantity : '-'}{' '}
                                 </td>
                                 <td className='text-center text-nowrap'>
-                                  {d?.tradeOnLTP ? d?.tradeOnLTP : '-'}{' '}
+                                  {d?.tradeOnLTP ? (
+                                    <span className='badge bg-success'>
+                                      Yes
+                                    </span>
+                                  ) : (
+                                    <span className='badge bg-danger'>No</span>
+                                  )}{' '}
                                 </td>
                                 <td className='text-center text-nowrap'>
                                   {d?.tradeType == 0 ? (
@@ -549,7 +594,7 @@ const TradeList = () => {
                                 ? 'tableLoaderBox'
                                 : ''
                             }`}
-                            colSpan={11}
+                            colSpan={12}
                           >
                             {loader ? (
                               <div

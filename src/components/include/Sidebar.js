@@ -101,6 +101,19 @@ const Sidebar = () => {
                   <span>Close Trade List</span>
                 </Link>
               </li>
+              <li
+                className={`${
+                  path == '/panding-order-list' ? 'mm-active' : ''
+                }`}
+              >
+                <Link
+                  href={`/${process.env.ADMFLDR}/panding-order-list`}
+                  className={`${path == '/panding-order-list' ? 'active' : ''}`}
+                >
+                  <i className='mdi mdi-allergy'></i>
+                  <span>Panding Order List</span>
+                </Link>
+              </li>
               <li className='menu-title'>Manage User</li>
               <li className={`${path == '/userlist' ? 'mm-active' : ''}`}>
                 <Link

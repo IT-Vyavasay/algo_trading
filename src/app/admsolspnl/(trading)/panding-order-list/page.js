@@ -18,14 +18,13 @@ const moment = require('moment');
 moment.suppressDeprecationWarnings = true;
 import ReactPaginate from 'react-paginate';
 import Flatpickr from 'react-flatpickr';
-const CloseTradeList = ({ option }) => {
+const PandingOrderList = ({ option }) => {
   const tempOption = {
     title: '',
     setMultiLoader: {},
-    multiLoader: { CloseTradeLoader: true },
+    multiLoader: { PandingOrderLoader: true },
   };
   const { title, setMultiLoader, multiLoader } = option ? option : tempOption;
-
   const { setAuthTkn, setPageLoader } = useAuthContext();
   const [page, setPage] = useState(0);
   const [totalPage, setTotalPage] = useState(0);
@@ -57,6 +56,7 @@ const CloseTradeList = ({ option }) => {
   const [show, setShow] = useState(false);
   const [loader, setLoader] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectRecId, setSelectRecId] = useState('');
   const [coin_modal_data, set_coin_modal_data] = useState({});
 
   const handleClose = () => {
@@ -72,56 +72,6 @@ const CloseTradeList = ({ option }) => {
     setShow(true);
   };
 
-  const handleSubmit = async data => {
-    console.log(data);
-    if (!loading) {
-      try {
-        validate_string(`${coin_modal_data.symbole}`, 'symbole');
-        validate_string(
-          `${coin_modal_data.latestTradedPrice}`,
-          'latest tradedP price',
-        );
-        validate_string(`${coin_modal_data.tradedQunaty}`, 'traded qunaty');
-        validate_string(`${coin_modal_data.tradeTime}`, 'trade time');
-        validate_string(`${coin_modal_data.tradeType}`, 'trade type');
-        validate_string(`${coin_modal_data.tradOnLTP}`, 'tradOnLTP');
-        validate_string(`${coin_modal_data.quantity}`, 'quantity');
-        validate_string(`${coin_modal_data.targetPrice}`, 'target price');
-      } catch (e) {
-        toast.error(e);
-        return false;
-      }
-
-      setLoading(true);
-      let bodyData = {
-        symbole: coin_modal_data.symbole,
-        latestTradedPrice: coin_modal_data.latestTradedPrice,
-        tradedQunaty: coin_modal_data.tradedQunaty,
-        tradeTime: coin_modal_data.tradeTime,
-        tradeType: coin_modal_data.tradeType,
-        tradOnLTP: coin_modal_data.tradOnLTP,
-        quantity: coin_modal_data.quantity,
-        targetPrice: coin_modal_data.targetPrice,
-      };
-      const add_user = await fetchApi(
-        'trading/manage-trade/add-trade',
-        JSON.stringify(bodyData),
-      );
-      setLoading(false);
-      if (add_user?.statusCode == 200) {
-        toast.success(add_user?.data?.message);
-        set_coin_modal_data({});
-        handleClose();
-      } else {
-        if (add_user.data.message == 'Unauthorized') {
-          setAuthTkn(add_user.data.message);
-        } else {
-          toast.error(add_user.data.message);
-        }
-      }
-    }
-  };
-
   const GetNotifyEmailList = async () => {
     if (!loader) {
       setLoader(true);
@@ -135,7 +85,7 @@ const CloseTradeList = ({ option }) => {
       });
 
       const getNotifyEmailList = await fetchApi(
-        'trading/manage-trade/close-trade/close-trade-list',
+        'trading/manage-trade/panding-order/panding-order-list',
         userData,
         'GET',
       );
@@ -193,7 +143,7 @@ const CloseTradeList = ({ option }) => {
 
   useEffect(() => {
     GetNotifyEmailList();
-  }, [page, order, orderClm, multiLoader.CloseTradeLoader]);
+  }, [page, order, orderClm, multiLoader.PandingOrderLoader]);
 
   useEffect(() => {
     const ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
@@ -233,11 +183,84 @@ const CloseTradeList = ({ option }) => {
     if (tradeType == 0) {
       const total =
         parseFloat(latestTradedPrice - targetPrice) * parseInt(quantity);
-      return total.toFixed(2);
+      return (
+        <span
+          className={`badge bg-${total.toFixed(2) > 0 ? 'success' : 'danger'}`}
+        >
+          {total.toFixed(2)}
+        </span>
+      );
     } else {
       const total =
         parseFloat(targetPrice - latestTradedPrice) * parseInt(quantity);
-      return total.toFixed(2);
+      return (
+        <span
+          className={`badge bg-${total.toFixed(2) > 0 ? 'success' : 'danger'}`}
+        >
+          {total.toFixed(2)}
+        </span>
+      );
+    }
+  };
+
+  const handleSubmit = async data => {
+    console.log(data);
+    if (!loading) {
+      try {
+        validate_string(`${data.symbole}`, 'symbole');
+        validate_string(`${data.latestTradedPrice}`, 'latest tradedP price');
+        validate_string(`${data.tradedQunaty}`, 'traded qunaty');
+        validate_string(`${data.tradeTime}`, 'trade time');
+        validate_string(`${data.tradeType}`, 'trade type');
+        validate_string(`${data.tradOnLTP}`, 'tradOnLTP');
+        validate_string(`${data.quantity}`, 'quantity');
+        validate_string(`${data.targetPrice}`, 'target price');
+      } catch (e) {
+        toast.error(e);
+        return false;
+      }
+
+      setLoading(true);
+      let bodyData = {
+        symbole: data.symbole,
+        latestTradedPrice: data.latestTradedPrice,
+        tradedQunaty: data.tradedQunaty,
+        tradeTime: data.tradeTime,
+        tradeType: data.tradeType,
+        tradOnLTP: data.tradOnLTP,
+        quantity: data.quantity,
+        targetPrice: data.targetPrice,
+        id: data.id,
+        profit: getProfitLoss(
+          data?.tradeType,
+          data?.targetPrice,
+          getCoinDetails(data?.symbole, 'latestTradedPrice'),
+          data?.quantity,
+        ),
+        executedPrice: getCoinDetails(data?.symbole, 'latestTradedPrice'),
+        closedPrice: getCoinDetails(data?.symbole, 'latestTradedPrice'),
+      };
+      const add_user = await fetchApi(
+        'trading/manage-trade/close-trade',
+        JSON.stringify(bodyData),
+      );
+      setLoading(false);
+      setSelectRecId('');
+      GetNotifyEmailList();
+      setMultiLoader({
+        ...multiLoader,
+        CloseTradeLoader: !multiLoader.CloseTradeLoader,
+      });
+      if (add_user?.statusCode == 200) {
+        toast.success(add_user?.data?.message);
+        // set_coin_modal_data({});
+      } else {
+        if (add_user.data.message == 'Unauthorized') {
+          setAuthTkn(add_user.data.message);
+        } else {
+          toast.error(add_user.data.message);
+        }
+      }
     }
   };
   useEffect(() => {
@@ -250,21 +273,22 @@ const CloseTradeList = ({ option }) => {
         <div className='row'>
           {title !== 'incard' && (
             <h3 className='page-title-main' onClick={() => console.log(title)}>
-              Closed Trade List
+              Panding Order List
             </h3>
           )}
+
           <div className={`col-lg-12 ${title == 'incard' && 'p-0'}`}>
             <div className={`card ${title !== 'incard' && 'mt-4 mb-4'} `}>
               <div className='card-header d-block'>
                 {title == 'incard' && (
                   <div className='d-flex align-items-center '>
-                    <span className='mdi mdi-lock  dashboard-voucher-icon pl-0' />
-                    <h3> Closed Trade List</h3>
+                    <span className='mdi mdi-allergy  dashboard-voucher-icon pl-0' />
+                    <h3>Panding Order List</h3>
                   </div>
                 )}
                 <div className='row'>
                   <div className='col-xl-2 col-lg-6 col-md-4 col-12 col-sm-6 my-2 custom'>
-                    <label className='form-label'>Subscribe On</label>
+                    <label className='form-label'>Ordered On</label>
                     <Flatpickr
                       className='form-control'
                       options={{
@@ -373,13 +397,8 @@ const CloseTradeList = ({ option }) => {
                         <th
                           scope='col'
                           className='text-center cursor-pointer text-nowrap'
-                          onClick={() => sortData(3, order == 0 ? 1 : 0)}
                         >
-                          Close Price
-                          <span className='iconPosition'>
-                            <i className='fa fa-solid fa-sort-up position-absolute mx-1 mt-1 text-dull asc-3'></i>
-                            <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-3'></i>
-                          </span>
+                          Current Price
                         </th>
                         <th
                           scope='col'
@@ -444,6 +463,7 @@ const CloseTradeList = ({ option }) => {
                             <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-9'></i>
                           </span>
                         </th>
+                        <th scope='col'>Action</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -462,22 +482,33 @@ const CloseTradeList = ({ option }) => {
                                   {d?.targetPrice ? d?.targetPrice : '-'}{' '}
                                 </td>
                                 <td className='text-center text-nowrap'>
-                                  {d?.closedPrice ? d?.closedPrice : '-'}{' '}
+                                  {getCoinDetails(
+                                    d?.symbole,
+                                    'latestTradedPrice',
+                                  )}
                                 </td>
                                 <td className='text-center text-nowrap'>
-                                  <span
-                                    className={`badge bg-${
-                                      d?.profit < 0 ? 'danger' : 'success'
-                                    }`}
-                                  >
-                                    {d?.profit}
-                                  </span>
+                                  {getProfitLoss(
+                                    d?.tradeType,
+                                    d?.targetPrice,
+                                    getCoinDetails(
+                                      d?.symbole,
+                                      'latestTradedPrice',
+                                    ),
+                                    d?.quantity,
+                                  )}
                                 </td>
                                 <td className='text-center text-nowrap'>
                                   {d?.quantity ? d?.quantity : '-'}{' '}
                                 </td>
                                 <td className='text-center text-nowrap'>
-                                  {d?.tradeOnLTP ? d?.tradeOnLTP : '-'}{' '}
+                                  {d?.tradeOnLTP ? (
+                                    <span className='badge bg-success'>
+                                      Yes
+                                    </span>
+                                  ) : (
+                                    <span className='badge bg-danger'>No</span>
+                                  )}{' '}
                                 </td>
                                 <td className='text-center text-nowrap'>
                                   {d?.tradeType == 0 ? (
@@ -503,6 +534,53 @@ const CloseTradeList = ({ option }) => {
                                 >
                                   {convert_date(d.createdOn)}{' '}
                                 </td>
+                                <td className='text-center text-nowrap'>
+                                  <div className='d-flex justify-content-start'>
+                                    <div className='actionBtn'>
+                                      {d?.tradeType == 1 ? (
+                                        <button
+                                          className='btn btn-success waves-effect waves-light'
+                                          onClick={() => {
+                                            setSelectRecId(i + 1);
+                                            handleSubmit(d);
+                                          }}
+                                          data-toggle='modal'
+                                          data-target='#myModal'
+                                        >
+                                          {' '}
+                                          <span className='btn-label'>
+                                            {selectRecId == i + 1 ? (
+                                              <i className='fa fa-spinner fa-spin'></i>
+                                            ) : (
+                                              <i className='mdi mdi-plus-circle-outline'></i>
+                                            )}{' '}
+                                          </span>{' '}
+                                          Buy
+                                        </button>
+                                      ) : (
+                                        <button
+                                          className='btn btn-danger waves-effect waves-light'
+                                          onClick={() => {
+                                            setSelectRecId(i + 1);
+                                            handleSubmit(d);
+                                          }}
+                                          data-toggle='modal'
+                                          data-target='#myModal'
+                                        >
+                                          {' '}
+                                          <span className='btn-label'>
+                                            {selectRecId == i + 1 ? (
+                                              <i className='fa fa-spinner fa-spin'></i>
+                                            ) : (
+                                              <i className='mdi mdi-plus-circle-outline'></i>
+                                            )}{' '}
+                                          </span>{' '}
+                                          Sell
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
                               </tr>
                             );
                           })
@@ -516,7 +594,7 @@ const CloseTradeList = ({ option }) => {
                                 ? 'tableLoaderBox'
                                 : ''
                             }`}
-                            colSpan={10}
+                            colSpan={12}
                           >
                             {loader ? (
                               <div
@@ -727,4 +805,4 @@ const CloseTradeList = ({ option }) => {
   );
 };
 
-export default CloseTradeList;
+export default PandingOrderList;
