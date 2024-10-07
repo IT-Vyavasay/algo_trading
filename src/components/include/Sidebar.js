@@ -78,6 +78,29 @@ const Sidebar = () => {
                   <span>Coin List</span>
                 </Link>
               </li>
+              <li className='menu-title'>Manage Trades</li>
+              <li
+                className={`${path == '/active-trade-list' ? 'mm-active' : ''}`}
+              >
+                <Link
+                  href={`/${process.env.ADMFLDR}/active-trade-list`}
+                  className={`${path == '/active-trade-list' ? 'active' : ''}`}
+                >
+                  <i className='mdi mdi-radioactive'></i>
+                  <span>Active Trade List</span>
+                </Link>
+              </li>
+              <li
+                className={`${path == '/close-trade-list' ? 'mm-active' : ''}`}
+              >
+                <Link
+                  href={`/${process.env.ADMFLDR}/close-trade-list`}
+                  className={`${path == '/close-trade-list' ? 'active' : ''}`}
+                >
+                  <i className='mdi mdi-lock'></i>
+                  <span>Close Trade List</span>
+                </Link>
+              </li>
               <li className='menu-title'>Manage User</li>
               <li className={`${path == '/userlist' ? 'mm-active' : ''}`}>
                 <Link

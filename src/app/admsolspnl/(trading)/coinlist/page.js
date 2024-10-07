@@ -35,70 +35,64 @@ const CoinList = () => {
   const handleShow = coinData => {
     set_coin_modal_data({
       ...coinData,
-      targetPrice: coinData.price,
+      targetPrice: coinData.latestTradedPrice,
       tradOnLTP: 1,
       quantity: 1,
     });
     setShow(true);
   };
 
-  const handleSubmit = data => {
+  const handleSubmit = async data => {
     console.log(data);
     if (!loading) {
       try {
-        validate_string(fields.newPassword, 'new password');
-        chk_password(fields.newPassword);
-        validate_string(fields.confirmPassword, 'confirm password');
-        if (fields.newPassword !== fields.confirmPassword) {
-          throw `Password and confirm password doesn't match`;
-        }
-        validate_string(fields.admPassword, 'admin password');
-        chk_password(fields.admPassword);
+        validate_string(`${coin_modal_data.symbole}`, 'symbole');
+        validate_string(
+          `${coin_modal_data.latestTradedPrice}`,
+          'latest tradedP price',
+        );
+        validate_string(`${coin_modal_data.tradeTime}`, 'trade time');
+        validate_string(`${coin_modal_data.tradeType}`, 'trade type');
+        validate_string(`${coin_modal_data.tradOnLTP}`, 'tradOnLTP');
+        validate_string(`${coin_modal_data.quantity}`, 'quantity');
+        validate_string(`${coin_modal_data.targetPrice}`, 'target price');
       } catch (e) {
         toast.error(e);
         return false;
       }
 
-      Swal.fire({
-        title: 'Are you sure?',
-        text: `You want to change password for ${`trade_type`}.`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#448ec5',
-        confirmButtonText: 'Yes',
-      }).then(async result => {
-        if (result.isConfirmed) {
-          setLoading(true);
-          let bodyData = {
-            admPassword: fields.admPassword,
-            newPassword: fields.newPassword,
-            userId: coin_modal_data,
-          };
-          const add_user = await fetchApi(
-            'user/change-password',
-            JSON.stringify(bodyData),
-          );
-          setLoading(false);
-          if (add_user?.statusCode == 200) {
-            toast.success(add_user?.data?.message);
-            setFields({});
-            handleClose();
-          } else {
-            if (add_user.data.message == 'Unauthorized') {
-              setAuthTkn(add_user.data.message);
-            } else {
-              toast.error(add_user.data.message);
-            }
-          }
+      setLoading(true);
+      let bodyData = {
+        symbole: coin_modal_data.symbole,
+        latestTradedPrice: coin_modal_data.latestTradedPrice,
+        quantity: coin_modal_data.quantity,
+        tradeTime: coin_modal_data.tradeTime,
+        tradeType: coin_modal_data.tradeType == 'buy' ? 1 : 0,
+        tradOnLTP: coin_modal_data.tradOnLTP,
+        targetPrice: coin_modal_data.targetPrice,
+      };
+      const add_user = await fetchApi(
+        'trading/manage-trade/add-trade',
+        JSON.stringify(bodyData),
+      );
+      setLoading(false);
+      if (add_user?.statusCode == 200) {
+        toast.success(add_user?.data?.message);
+        set_coin_modal_data({});
+        handleClose();
+      } else {
+        if (add_user.data.message == 'Unauthorized') {
+          setAuthTkn(add_user.data.message);
+        } else {
+          toast.error(add_user.data.message);
         }
-      });
+      }
     }
   };
 
   const [cryptoData, setCryptoData] = useState([]);
 
   useEffect(() => {
-    // Create WebSocket connection
     const ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
 
     // Listen for messages (price updates) from the WebSocket
