@@ -23,6 +23,28 @@ export function validate_config_number(data, prefix, type = 0) {
     throw prefix + ' value should be less than or equal to 100%';
   }
 }
+export function generateTradeId(price) {
+  try {
+    // Get the current timestamp (up to milliseconds)
+    const timestamp = new Date().getTime(); // gives you a 13-digit number (milliseconds since 1970)
+
+    // Convert timestamp and passedId to string
+    const timeString = timestamp.toString(); // Use the last 6 digits of the timestamp
+    const parsePrice = `${parseInt(price)}`;
+    const idString = parsePrice.slice(parsePrice.length - 4, parsePrice.length); // Use the first 4 digits of the passed ID
+
+    // Combine the two to form a 10-digit trade ID
+    const tradeId = `${timeString}` + `${idString}`;
+
+    console.log({ tradeId, timeString, idString });
+
+    return parseInt(tradeId);
+  } catch (error) {
+    console.log('generateTradeId', error);
+  }
+}
+
+// Example usage:
 
 export function validate_filter_numbers(data) {
   for (let dd in data) {

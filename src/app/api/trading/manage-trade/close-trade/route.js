@@ -20,6 +20,7 @@ export async function POST(req, res) {
       tradOnLTP,
       targetPrice,
       id,
+      table,
     } = await req.json();
     try {
       validate_string(`${symbole}`, 'symbole');
@@ -51,12 +52,17 @@ export async function POST(req, res) {
       closedPrice =
         closedPrice + (closedPrice * brokerageData?.brokerage) / 100;
     }
-    await sql_query('delete from activetrade where activeTradeId = ?', [id]);
+    if (table == 'pandingorder') {
+      await sql_query('delete from pandingorder where activeTradeId = ?', [id]);
+    } else {
+      await sql_query('delete from activetrade where activeTradeId = ?', [id]);
+    }
     await sql_query(
-      'insert into closetrade (symbole,tradedPrice, targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,createdOn, profit, closedPrice, executedPrice) values (?,?,?,?,?,?,?,?,?,?,?,?)',
+      'insert into closetrade (symbole,tradedPrice, uniqTradeId,targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,createdOn, profit, closedPrice, executedPrice) values (?,?,?,?,?,?,?,?,?,?,?,?,?)',
       [
         symbole,
         latestTradedPrice,
+        uniqTradeId,
         targetPrice,
         quantity,
         tradOnLTP,

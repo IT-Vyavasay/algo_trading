@@ -17,6 +17,9 @@ export async function POST(req, res) {
       tradeType,
       tradOnLTP,
       targetPrice,
+      table,
+      id,
+      uniqTradeId,
     } = await req.json();
     try {
       validate_string(`${symbole}`, 'symbole');
@@ -26,6 +29,7 @@ export async function POST(req, res) {
       validate_string(`${tradeType}`, 'trade type');
       validate_string(`${tradOnLTP}`, 'tradOnLTP');
       validate_string(`${targetPrice}`, 'target price');
+      validate_string(`${uniqTradeId}`, 'uniq tradeId');
     } catch (e) {
       console.log('first', e);
       return NextResponse.json({ message: e }, { status: 400 });
@@ -44,11 +48,16 @@ export async function POST(req, res) {
       targetPrice =
         targetPrice - (targetPrice * brokerageData?.brokerage) / 100;
     }
+
+    if (id && table == 'pandingorder') {
+      await sql_query('delete from pandingorder where activeTradeId = ?', [id]);
+    }
     await sql_query(
-      'insert into activetrade (symbole,tradedPrice, targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,createdOn) values (?,?,?,?,?,?,?,?,?)',
+      'insert into activetrade (symbole,tradedPrice, uniqTradeId,targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,createdOn) values (?,?,?,?,?,?,?,?,?,?)',
       [
         symbole,
         latestTradedPrice,
+        uniqTradeId,
         targetPrice,
         quantity,
         tradOnLTP,

@@ -174,7 +174,7 @@ const PandingOrderList = ({ option }) => {
     }
   };
 
-  const getProfitLoss = (
+  const getProfitLossBadge = (
     tradeType,
     targetPrice,
     latestTradedPrice,
@@ -202,9 +202,25 @@ const PandingOrderList = ({ option }) => {
       );
     }
   };
+  const getProfitLoss = (
+    tradeType,
+    targetPrice,
+    latestTradedPrice,
+    quantity = 1,
+  ) => {
+    if (tradeType == 0) {
+      const total =
+        parseFloat(latestTradedPrice - targetPrice) * parseInt(quantity);
+      return total.toFixed(2);
+    } else {
+      const total =
+        parseFloat(targetPrice - latestTradedPrice) * parseInt(quantity);
+      return total.toFixed(2);
+    }
+  };
 
   const handleSubmit = async data => {
-    console.log(data);
+    console.log(`datffffa`, data);
     if (!loading) {
       try {
         validate_string(`${data.symbole}`, 'symbole');
@@ -215,6 +231,7 @@ const PandingOrderList = ({ option }) => {
         validate_string(`${data.tradOnLTP}`, 'tradOnLTP');
         validate_string(`${data.quantity}`, 'quantity');
         validate_string(`${data.targetPrice}`, 'target price');
+        validate_string(`${data.uniqTradeId}`, 'uniq tradeId');
       } catch (e) {
         toast.error(e);
         return false;
@@ -230,18 +247,14 @@ const PandingOrderList = ({ option }) => {
         tradOnLTP: data.tradOnLTP,
         quantity: data.quantity,
         targetPrice: data.targetPrice,
+        uniqTradeId: data.uniqTradeId,
         id: data.id,
-        profit: getProfitLoss(
-          data?.tradeType,
-          data?.targetPrice,
-          getCoinDetails(data?.symbole, 'latestTradedPrice'),
-          data?.quantity,
-        ),
         executedPrice: getCoinDetails(data?.symbole, 'latestTradedPrice'),
         closedPrice: getCoinDetails(data?.symbole, 'latestTradedPrice'),
+        table: 'pandingorder',
       };
       const add_user = await fetchApi(
-        'trading/manage-trade/close-trade',
+        'trading/manage-trade/add-trade',
         JSON.stringify(bodyData),
       );
       setLoading(false);
@@ -249,11 +262,10 @@ const PandingOrderList = ({ option }) => {
       GetNotifyEmailList();
       setMultiLoader({
         ...multiLoader,
-        CloseTradeLoader: !multiLoader.CloseTradeLoader,
+        TradeLoader: !multiLoader.TradeLoader,
       });
       if (add_user?.statusCode == 200) {
         toast.success(add_user?.data?.message);
-        // set_coin_modal_data({});
       } else {
         if (add_user.data.message == 'Unauthorized') {
           setAuthTkn(add_user.data.message);
@@ -266,6 +278,41 @@ const PandingOrderList = ({ option }) => {
   useEffect(() => {
     setPageLoader(false);
   }, []);
+
+  function monitorCryptoPrices(cryptoList, n) {
+    if (notifyEmailList?.length > 0) {
+      // Check price fluctuation every second
+      cryptoList.forEach((crypto, index) => {
+        const currentPrice = getCoinDetails(
+          crypto?.symbole,
+          'latestTradedPrice',
+        );
+
+        // Calculate the price range
+        const minPrice = currentPrice * (1 - n / 100);
+        const maxPrice = currentPrice * (1 + n / 100);
+
+        // Get the latest price of the crypto (You may need to call an API for this)
+        const latestPrice = crypto?.targetPrice; // Dummy function for fetching the latest price
+        // Check if the latest price is within the range
+        if (latestPrice >= minPrice && latestPrice <= maxPrice) {
+          // Execute the order if within range
+          setCryptoData(cryptoData.filter(el => el.id != crypto.id));
+          setSelectRecId(crypto.id);
+          handleSubmit(crypto);
+        }
+      });
+    }
+    return null;
+  }
+
+  useEffect(() => {
+    if (notifyEmailList?.length > 0) {
+      monitorCryptoPrices(notifyEmailList, 0.1, (crypto, latestPrice) => {
+        console.log(crypto);
+      });
+    }
+  }, [cryptoData]);
   return (
     <div className='content-body btn-page'>
       <Toaster position='top-right' reverseOrder={false} />
@@ -372,17 +419,7 @@ const PandingOrderList = ({ option }) => {
                             <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-1'></i>
                           </span>
                         </th>
-                        {/* <th
-                          scope='col'
-                          className='text-center cursor-pointer text-nowrap'
-                          onClick={() => sortData(2, order == 0 ? 1 : 0)}
-                        >
-                          Traded Price
-                          <span className='iconPosition'>
-                            <i className='fa fa-solid fa-sort-up position-absolute mx-1 mt-1 text-dull asc-2'></i>
-                            <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-2'></i>
-                          </span>
-                        </th> */}
+
                         <th
                           scope='col'
                           className='text-center cursor-pointer text-nowrap'
@@ -488,7 +525,7 @@ const PandingOrderList = ({ option }) => {
                                   )}
                                 </td>
                                 <td className='text-center text-nowrap'>
-                                  {getProfitLoss(
+                                  {getProfitLossBadge(
                                     d?.tradeType,
                                     d?.targetPrice,
                                     getCoinDetails(
@@ -541,7 +578,7 @@ const PandingOrderList = ({ option }) => {
                                         <button
                                           className='btn btn-success waves-effect waves-light'
                                           onClick={() => {
-                                            setSelectRecId(i + 1);
+                                            setSelectRecId(d.id);
                                             handleSubmit(d);
                                           }}
                                           data-toggle='modal'
@@ -549,7 +586,7 @@ const PandingOrderList = ({ option }) => {
                                         >
                                           {' '}
                                           <span className='btn-label'>
-                                            {selectRecId == i + 1 ? (
+                                            {selectRecId == d.id ? (
                                               <i className='fa fa-spinner fa-spin'></i>
                                             ) : (
                                               <i className='mdi mdi-plus-circle-outline'></i>
@@ -561,7 +598,7 @@ const PandingOrderList = ({ option }) => {
                                         <button
                                           className='btn btn-danger waves-effect waves-light'
                                           onClick={() => {
-                                            setSelectRecId(i + 1);
+                                            setSelectRecId(d.id);
                                             handleSubmit(d);
                                           }}
                                           data-toggle='modal'
@@ -569,7 +606,7 @@ const PandingOrderList = ({ option }) => {
                                         >
                                           {' '}
                                           <span className='btn-label'>
-                                            {selectRecId == i + 1 ? (
+                                            {selectRecId == d.id ? (
                                               <i className='fa fa-spinner fa-spin'></i>
                                             ) : (
                                               <i className='mdi mdi-plus-circle-outline'></i>

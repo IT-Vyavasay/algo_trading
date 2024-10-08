@@ -7,6 +7,7 @@ import {
   chk_password,
   convert_date,
   convert_date_upto_second,
+  generateTradeId,
   validate_string,
 } from '../../../../utils/common';
 import { fetchApi } from '../../../../utils/frondend';
@@ -72,6 +73,7 @@ const CoinList = ({ option }) => {
         tradeType: data.tradeType == 'buy' ? 0 : 1,
         tradOnLTP: data.tradOnLTP,
         targetPrice: data.targetPrice,
+        uniqTradeId: generateTradeId(data.latestTradedPrice),
       };
       const add_user = await fetchApi(
         data.tradOnLTP == 1

@@ -17,6 +17,7 @@ export async function POST(req, res) {
       tradeType,
       tradOnLTP,
       targetPrice,
+      uniqTradeId,
     } = await req.json();
     try {
       validate_string(`${symbole}`, 'symbole');
@@ -26,6 +27,7 @@ export async function POST(req, res) {
       validate_string(`${tradeType}`, 'trade type');
       validate_string(`${tradOnLTP}`, 'tradOnLTP');
       validate_string(`${targetPrice}`, 'target price');
+      validate_string(`${uniqTradeId}`, 'uniq tradeId');
     } catch (e) {
       console.log('first', e);
       return NextResponse.json({ message: e }, { status: 400 });
@@ -45,10 +47,11 @@ export async function POST(req, res) {
         targetPrice - (targetPrice * brokerageData?.brokerage) / 100;
     }
     await sql_query(
-      'insert into pandingorder (symbole,tradedPrice, targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,createdOn) values (?,?,?,?,?,?,?,?,?)',
+      'insert into pandingorder (symbole,tradedPrice,uniqTradeId, targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,createdOn) values (?,?,?,?,?,?,?,?,?,?)',
       [
         symbole,
         latestTradedPrice,
+        uniqTradeId,
         targetPrice,
         quantity,
         tradOnLTP,

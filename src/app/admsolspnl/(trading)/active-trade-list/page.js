@@ -174,7 +174,7 @@ const TradeList = ({ option }) => {
     }
   };
 
-  const getProfitLoss = (
+  const getProfitLossBadge = (
     tradeType,
     targetPrice,
     latestTradedPrice,
@@ -200,6 +200,22 @@ const TradeList = ({ option }) => {
           {total.toFixed(2)}
         </span>
       );
+    }
+  };
+  const getProfitLoss = (
+    tradeType,
+    targetPrice,
+    latestTradedPrice,
+    quantity = 1,
+  ) => {
+    if (tradeType == 0) {
+      const total =
+        parseFloat(latestTradedPrice - targetPrice) * parseInt(quantity);
+      return total.toFixed(2);
+    } else {
+      const total =
+        parseFloat(targetPrice - latestTradedPrice) * parseInt(quantity);
+      return total.toFixed(2);
     }
   };
 
@@ -231,6 +247,7 @@ const TradeList = ({ option }) => {
         quantity: data.quantity,
         targetPrice: data.targetPrice,
         id: data.id,
+        uniqTradeId: data.uniqTradeId,
         profit: getProfitLoss(
           data?.tradeType,
           data?.targetPrice,
@@ -488,7 +505,7 @@ const TradeList = ({ option }) => {
                                   )}
                                 </td>
                                 <td className='text-center text-nowrap'>
-                                  {getProfitLoss(
+                                  {getProfitLossBadge(
                                     d?.tradeType,
                                     d?.targetPrice,
                                     getCoinDetails(
@@ -541,7 +558,7 @@ const TradeList = ({ option }) => {
                                         <button
                                           className='btn btn-success waves-effect waves-light'
                                           onClick={() => {
-                                            setSelectRecId(i + 1);
+                                            setSelectRecId(d.id);
                                             handleSubmit(d);
                                           }}
                                           data-toggle='modal'
@@ -549,7 +566,7 @@ const TradeList = ({ option }) => {
                                         >
                                           {' '}
                                           <span className='btn-label'>
-                                            {selectRecId == i + 1 ? (
+                                            {selectRecId == d.id ? (
                                               <i className='fa fa-spinner fa-spin'></i>
                                             ) : (
                                               <i className='mdi mdi-plus-circle-outline'></i>
@@ -561,7 +578,7 @@ const TradeList = ({ option }) => {
                                         <button
                                           className='btn btn-danger waves-effect waves-light'
                                           onClick={() => {
-                                            setSelectRecId(i + 1);
+                                            setSelectRecId(d.id);
                                             handleSubmit(d);
                                           }}
                                           data-toggle='modal'
@@ -569,7 +586,7 @@ const TradeList = ({ option }) => {
                                         >
                                           {' '}
                                           <span className='btn-label'>
-                                            {selectRecId == i + 1 ? (
+                                            {selectRecId == d.id ? (
                                               <i className='fa fa-spinner fa-spin'></i>
                                             ) : (
                                               <i className='mdi mdi-plus-circle-outline'></i>
