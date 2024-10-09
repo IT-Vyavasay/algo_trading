@@ -21,6 +21,7 @@ export async function POST(req, res) {
       id,
       uniqTradeId,
     } = await req.json();
+
     try {
       validate_string(`${symbole}`, 'symbole');
       validate_string(`${latestTradedPrice}`, 'latest tradedP price');
@@ -39,7 +40,6 @@ export async function POST(req, res) {
       'select brokerage from tblslr_admin where slrAdminId = ? ',
       [adm.data.id],
     );
-    console.log('brokerage', brokerageData?.brokerage);
 
     if (tradeType == 0) {
       targetPrice =
@@ -52,25 +52,42 @@ export async function POST(req, res) {
     if (id && table == 'pandingorder') {
       await sql_query('delete from pandingorder where activeTradeId = ?', [id]);
     }
-    await sql_query(
-      'insert into activetrade (symbole,tradedPrice, uniqTradeId,targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,createdOn) values (?,?,?,?,?,?,?,?,?,?)',
-      [
-        symbole,
-        latestTradedPrice,
-        uniqTradeId,
-        targetPrice,
-        quantity,
-        tradOnLTP,
-        tradeType,
-        tradeTime,
-        now,
-        now,
-      ],
+    const isTradExist = await sql_query(
+      'select * from activetrade where uniqTradeId = ?',
+      [uniqTradeId],
     );
+    try {
+      if (!isTradExist) {
+        console.log('isTradExist', isTradExist);
+      }
+    } catch (error) {
+      console.log('first', error);
+    }
+    if (!isTradExist) {
+      await sql_query(
+        'insert into activetrade (symbole,tradedPrice, uniqTradeId,targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,createdOn) values (?,?,?,?,?,?,?,?,?,?)',
+        [
+          symbole,
+          latestTradedPrice,
+          uniqTradeId,
+          targetPrice,
+          quantity,
+          tradOnLTP,
+          tradeType,
+          tradeTime,
+          now,
+          now,
+        ],
+      );
 
+      return NextResponse.json(
+        { message: 'Order executed successfully' },
+        { status: 200 },
+      );
+    }
     return NextResponse.json(
-      { message: 'Order executed successfully' },
-      { status: 200 },
+      { message: 'Order already executeded' },
+      { status: 400 },
     );
   } catch (e) {
     console.log(e);

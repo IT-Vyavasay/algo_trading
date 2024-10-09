@@ -46,25 +46,37 @@ export async function POST(req, res) {
       targetPrice =
         targetPrice - (targetPrice * brokerageData?.brokerage) / 100;
     }
-    await sql_query(
-      'insert into pandingorder (symbole,tradedPrice,uniqTradeId, targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,createdOn) values (?,?,?,?,?,?,?,?,?,?)',
-      [
-        symbole,
-        latestTradedPrice,
-        uniqTradeId,
-        targetPrice,
-        quantity,
-        tradOnLTP,
-        tradeType,
-        tradeTime,
-        now,
-        now,
-      ],
+
+    const isTradExist = await sql_query(
+      'select * from pandingorder where uniqTradeId = ?',
+      [uniqTradeId],
     );
 
+    if (!isTradExist) {
+      await sql_query(
+        'insert into pandingorder (symbole,tradedPrice,uniqTradeId, targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,createdOn) values (?,?,?,?,?,?,?,?,?,?)',
+        [
+          symbole,
+          latestTradedPrice,
+          uniqTradeId,
+          targetPrice,
+          quantity,
+          tradOnLTP,
+          tradeType,
+          tradeTime,
+          now,
+          now,
+        ],
+      );
+
+      return NextResponse.json(
+        { message: 'Order added in panding list successfully' },
+        { status: 200 },
+      );
+    }
     return NextResponse.json(
-      { message: 'Order added in panding list successfully' },
-      { status: 200 },
+      { message: 'Order already in panding' },
+      { status: 400 },
     );
   } catch (e) {
     console.log(e);
