@@ -6,20 +6,18 @@ import {
   chk_password,
   passDec,
   passEnc,
-  dec,
 } from '../../../../utils/common';
 import { sql_query } from '../../../../utils/dbconnect';
 import { recaptcha } from '../../../../utils/backend';
 import speakeasy from 'speakeasy';
 export async function POST(req, res) {
-  // try {
-  //   const secret = speakeasy.generateSecret({ name: 'admin' });
-  //   const password = passEnc(`Admin@123`, encryption_key('twofaKey'));
-  //   console.log('secret======================================', secret);
-  //   console.log(`password====================`, password);
-  // } catch (error) {
-  //   console.log('error', error);
-  // }
+  // const secret = speakeasy.generateSecret({ name: 'admin' });
+  // console.log(secret);
+
+  try {
+    const abc = passEnc(`Admin@123`, encryption_key('passwordKey'));
+    console.log(`abc`, abc);
+  } catch (error) {}
   try {
     let { email, password, repchaToken } = await req.json();
     let checkRepcha = await recaptcha(repchaToken);
@@ -42,7 +40,10 @@ export async function POST(req, res) {
       [email],
     );
 
-    if (adm && password === password) {
+    if (
+      adm &&
+      passDec(adm.password, encryption_key('passwordKey')) === password
+    ) {
       return NextResponse.json(
         { message: 'success', data: { twoOpen: adm.twoOpen } },
         { status: 200 },

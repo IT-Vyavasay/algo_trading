@@ -53,9 +53,6 @@ export async function POST(req, res) {
         targetPrice - (targetPrice * brokerageData?.brokerage) / 100;
     }
 
-    if (id && table == 'pandingorder') {
-      await sql_query('delete from pandingorder where activeTradeId = ?', [id]);
-    }
     const isTradExist = await sql_query(
       'select * from activetrade where uniqTradeId = ?',
       [uniqTradeId],
@@ -79,11 +76,22 @@ export async function POST(req, res) {
           now,
         ],
       );
-
+      console.log('-----------------------------------------------', {
+        id,
+        table,
+      });
+      if (table == 'pandingorder') {
+        await sql_query('delete from pandingorder where activeTradeId = ?', [
+          id,
+        ]);
+      }
       return NextResponse.json(
         { message: 'Order executed successfully' },
         { status: 200 },
       );
+    }
+    if (table == 'pandingorder') {
+      await sql_query('delete from pandingorder where activeTradeId = ?', [id]);
     }
     return NextResponse.json(
       { message: 'Order already executeded' },

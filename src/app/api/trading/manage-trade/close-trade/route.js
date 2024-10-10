@@ -21,6 +21,7 @@ export async function POST(req, res) {
       targetPrice,
       id,
       table,
+      uniqTradeId,
     } = await req.json();
     try {
       validate_string(`${symbole}`, 'symbole');
@@ -32,6 +33,7 @@ export async function POST(req, res) {
       validate_string(`${tradeTime}`, 'trade time');
       validate_string(`${tradeType}`, 'trade type');
       validate_string(`${tradOnLTP}`, 'tradOnLTP');
+      validate_string(`${uniqTradeId}`, 'uniqTrade Id');
       validate_string(`${targetPrice}`, 'target price');
       validate_string(id ? `${id}` : '', 'record id');
     } catch (e) {
@@ -43,7 +45,6 @@ export async function POST(req, res) {
       'select brokerage from tblslr_admin where slrAdminId = ? ',
       [adm.data.id],
     );
-    console.log('brokerage', brokerageData?.brokerage);
 
     if (tradeType == 0) {
       closedPrice =
@@ -52,33 +53,57 @@ export async function POST(req, res) {
       closedPrice =
         closedPrice + (closedPrice * brokerageData?.brokerage) / 100;
     }
-
-    await sql_query(
-      'insert into closetrade (symbole,tradedPrice, uniqTradeId,targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,createdOn, profit, closedPrice, executedPrice) values (?,?,?,?,?,?,?,?,?,?,?,?,?)',
-      [
-        symbole,
-        latestTradedPrice,
-        uniqTradeId,
-        targetPrice,
-        quantity,
-        tradOnLTP,
-        tradeType,
-        tradeTime,
-        now,
-        now,
-        profit,
-        closedPrice,
-        executedPrice,
-      ],
+    const isTradExist = await sql_query(
+      'select * from closetrade where uniqTradeId = ?',
+      [uniqTradeId],
     );
+
+    if (!isTradExist) {
+      await sql_query(
+        'insert into closetrade (symbole,tradedPrice, uniqTradeId,targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,createdOn, profit, closedPrice, executedPrice) values (?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        [
+          symbole,
+          latestTradedPrice,
+          uniqTradeId,
+          targetPrice,
+          quantity,
+          tradOnLTP,
+          tradeType,
+          tradeTime,
+          now,
+          now,
+          profit,
+          closedPrice,
+          executedPrice,
+        ],
+      );
+      console.log('pand================================ingorder', table);
+      if (table == 'pandingorder') {
+        await sql_query('delete from pandingorder where activeTradeId = ?', [
+          id,
+        ]);
+        console.log('order deleted from pandingorder');
+      } else {
+        await sql_query('delete from activetrade where activeTradeId = ?', [
+          id,
+        ]);
+        console.log('order deleted from activetrade');
+      }
+      return NextResponse.json(
+        { message: 'Order closed successfully' },
+        { status: 200 },
+      );
+    }
     if (table == 'pandingorder') {
       await sql_query('delete from pandingorder where activeTradeId = ?', [id]);
+      console.log('order deleted from pandingorder');
     } else {
       await sql_query('delete from activetrade where activeTradeId = ?', [id]);
+      console.log('order deleted from activetrade');
     }
     return NextResponse.json(
-      { message: 'Order closed successfully' },
-      { status: 200 },
+      { message: 'Order already in colsed' },
+      { status: 400 },
     );
   } catch (e) {
     console.log(e);

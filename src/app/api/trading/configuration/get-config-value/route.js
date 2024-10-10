@@ -10,7 +10,7 @@ export async function GET(req, res) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 400 });
     }
     let wallet_data = await sql_query(
-      'select wallet_balance from tbladmin where adminId = ? ',
+      'select wallet_balance from tblslr_admin where adminId = ? ',
       [adm.data.id],
     );
 

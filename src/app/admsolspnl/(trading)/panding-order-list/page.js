@@ -230,14 +230,30 @@ const PandingOrderList = ({ option }) => {
         validate_string(`${data.tradeType}`, 'trade type');
         validate_string(`${data.tradOnLTP}`, 'tradOnLTP');
         validate_string(`${data.quantity}`, 'quantity');
+        validate_string(`${data.tradeMethod}`, 'trade method');
+        validate_string(`${data.closeTarget}`, 'close target');
         validate_string(`${data.targetPrice}`, 'target price');
         validate_string(`${data.uniqTradeId}`, 'uniq tradeId');
+        validate_string(`${data.activeTradeId}`, 'panding order id');
+        validate_string(
+          `${getCoinDetails(data?.symbole, 'latestTradedPrice')}`,
+          'executed price',
+        );
+        validate_string(
+          `${getCoinDetails(data?.symbole, 'latestTradedPrice')}`,
+          'closed price',
+        );
       } catch (e) {
         toast.error(e);
         return false;
       }
 
       setLoading(true);
+      console.log(
+        `d====${data.activeTradeId}====================ata`,
+        data,
+        data.activeTradeId,
+      );
       let bodyData = {
         symbole: data.symbole,
         latestTradedPrice: data.latestTradedPrice,
@@ -254,6 +270,7 @@ const PandingOrderList = ({ option }) => {
         executedPrice: getCoinDetails(data?.symbole, 'latestTradedPrice'),
         closedPrice: getCoinDetails(data?.symbole, 'latestTradedPrice'),
         table: 'pandingorder',
+        badge: '---------------------',
       };
       const add_user = await fetchApi(
         'trading/manage-trade/add-trade',

@@ -36,7 +36,7 @@ export async function POST(req, res) {
     });
     if (twofa) {
       await sql_query(
-        `update tbladmin set wallet_balance=? where adminId  =? `,
+        `update wallet_balance set wallet_balance=? where adminId  =? `,
         [metaValue, adm.data.id],
       );
       return NextResponse.json(

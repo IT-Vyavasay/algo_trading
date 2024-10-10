@@ -66,7 +66,6 @@ export async function GET(req, res) {
       descNum = countData - page * limit;
 
     const tradeLists = JSON.parse(JSON.stringify(tradeDataList));
-    console.log(`tradeLists`, tradeLists);
     if (tradeLists.length > 0) {
       allData = tradeLists.map((j, k) => {
         return {

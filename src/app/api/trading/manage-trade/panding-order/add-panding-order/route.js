@@ -41,7 +41,6 @@ export async function POST(req, res) {
       'select brokerage from tblslr_admin where slrAdminId = ? ',
       [adm.data.id],
     );
-    console.log('brokerage', brokerageData?.brokerage);
 
     if (tradeType == 0) {
       targetPrice =

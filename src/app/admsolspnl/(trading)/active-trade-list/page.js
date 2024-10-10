@@ -230,9 +230,28 @@ const TradeList = ({ option }) => {
         validate_string(`${data.tradeType}`, 'trade type');
         validate_string(`${data.tradOnLTP}`, 'tradOnLTP');
         validate_string(`${data.quantity}`, 'quantity');
-        validate_string(`${data.targetPrice}`, 'target price');
         validate_string(`${data.tradeMethod}`, 'trade method');
         validate_string(`${data.closeTarget}`, 'close target');
+        validate_string(`${data.targetPrice}`, 'target price');
+        validate_string(`${data.uniqTradeId}`, 'uniq tradeId');
+        validate_string(`${data.activeTradeId}`, 'panding order id');
+        validate_string(
+          getProfitLoss(
+            data?.tradeType,
+            data?.targetPrice,
+            getCoinDetails(data?.symbole, 'latestTradedPrice'),
+            data?.quantity,
+          ),
+          'profit',
+        );
+        validate_string(
+          `${getCoinDetails(data?.symbole, 'latestTradedPrice')}`,
+          'executed price',
+        );
+        validate_string(
+          `${getCoinDetails(data?.symbole, 'latestTradedPrice')}`,
+          'closed price',
+        );
       } catch (e) {
         toast.error(e);
         return false;
