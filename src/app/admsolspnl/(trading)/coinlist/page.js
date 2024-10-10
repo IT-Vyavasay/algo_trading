@@ -45,6 +45,8 @@ const CoinList = ({ option }) => {
       targetPrice: coinData.latestTradedPrice,
       tradOnLTP: 1,
       quantity: 1,
+      tradeMethod: 1,
+      closeTarget: coinData.latestTradedPrice,
     });
     setShow(true);
   };
@@ -59,6 +61,8 @@ const CoinList = ({ option }) => {
         validate_string(`${data.tradOnLTP}`, 'tradOnLTP');
         validate_string(`${data.quantity}`, 'quantity');
         validate_string(`${data.targetPrice}`, 'target price');
+        validate_string(`${data.tradeMethod}`, 'trade method');
+        validate_string(`${data.closeTarget}`, 'close target');
       } catch (e) {
         toast.error(e);
         return false;
@@ -74,6 +78,8 @@ const CoinList = ({ option }) => {
         tradOnLTP: data.tradOnLTP,
         targetPrice: data.targetPrice,
         uniqTradeId: generateTradeId(data.latestTradedPrice),
+        tradeMethod: data.tradeMethod,
+        closeTarget: data.closeTarget,
       };
       const add_user = await fetchApi(
         data.tradOnLTP == 1
@@ -401,6 +407,68 @@ const CoinList = ({ option }) => {
                         set_coin_modal_data({
                           ...coin_modal_data,
                           targetPrice: e.target.value
+                            .replace(/[^0-9.]/g, '')
+                            .replace(/(\..*)\./g, '$1'),
+                        })
+                      }
+                      className='form-control'
+                    />
+                    <div className='input-group-append'>
+                      <div className='input-group-text' id='btnGroupAddon'>
+                        <i className={`${`   mdi mdi-currency-usd  fs-4`}`}></i>{' '}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          <div className='  d-flex justify-content-between align-items-center'>
+            <div>
+              <label className='col-form-label'>Is this algoTrade?</label>
+            </div>
+
+            <span
+              className={coin_modal_data.tradeMethod == 0 ? 'togggleOff' : ''}
+              onClick={() =>
+                set_coin_modal_data({
+                  ...coin_modal_data,
+                  tradeMethod: coin_modal_data.tradeMethod == 1 ? 0 : 1,
+                })
+              }
+            >
+              <span className='switchery switchery-small'>
+                <small></small>
+              </span>
+              <input
+                type='checkbox'
+                defaultChecked={false}
+                data-plugin='switchery'
+                data-color='#ff7aa3'
+                className='d-none'
+                data-switchery='true'
+              />
+            </span>
+          </div>
+          {coin_modal_data.tradeMethod == 1 && (
+            <>
+              <div className='mb-2'>
+                <div>
+                  <label className='col-form-label'>
+                    Enter Close Target Price
+                  </label>
+                </div>
+                <div className={`inputContainer form-group d-flex w-100`}>
+                  <div className='input-group'>
+                    <input
+                      name='ltp'
+                      value={coin_modal_data?.closeTarget}
+                      type='text'
+                      onChange={e =>
+                        set_coin_modal_data({
+                          ...coin_modal_data,
+                          closeTarget: e.target.value
                             .replace(/[^0-9.]/g, '')
                             .replace(/(\..*)\./g, '$1'),
                         })

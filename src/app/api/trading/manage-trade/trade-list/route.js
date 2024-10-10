@@ -22,7 +22,7 @@ export async function GET(req, res) {
     let query = '',
       filter = [],
       limit = process.env.PAGELIMIT;
-    query += `SELECT activeTradeId,symbole,tradedPrice, targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,createdOn FROM activetrade`;
+    query += `SELECT activeTradeId,symbole,tradeMethod,closeTarget,tradedPrice, targetPrice,quantity,tradeOnLTP,tradeType,tradeTime,uniqTradeId, orderExecuteTime,createdOn FROM activetrade`;
 
     let fields = [
       'createdOn',
@@ -66,7 +66,7 @@ export async function GET(req, res) {
       descNum = countData - page * limit;
 
     const tradeLists = JSON.parse(JSON.stringify(tradeDataList));
-
+    console.log(`tradeLists`, tradeLists);
     if (tradeLists.length > 0) {
       allData = tradeLists.map((j, k) => {
         return {
@@ -78,6 +78,9 @@ export async function GET(req, res) {
           quantity: j.quantity ? j.quantity : '',
           tradeOnLTP: j.tradeOnLTP ? j.tradeOnLTP : '',
           tradeType: j.tradeType,
+          tradeMethod: j.tradeMethod,
+          closeTarget: j.closeTarget,
+          uniqTradeId: j.uniqTradeId,
           tradeTime: j.tradeTime ? j.tradeTime : '',
           orderExecuteTime: j.orderExecuteTime ? j.orderExecuteTime : '',
           createdOn: j.createdOn ? j.createdOn : '',

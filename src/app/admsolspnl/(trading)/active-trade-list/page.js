@@ -231,6 +231,8 @@ const TradeList = ({ option }) => {
         validate_string(`${data.tradOnLTP}`, 'tradOnLTP');
         validate_string(`${data.quantity}`, 'quantity');
         validate_string(`${data.targetPrice}`, 'target price');
+        validate_string(`${data.tradeMethod}`, 'trade method');
+        validate_string(`${data.closeTarget}`, 'close target');
       } catch (e) {
         toast.error(e);
         return false;
@@ -248,6 +250,8 @@ const TradeList = ({ option }) => {
         targetPrice: data.targetPrice,
         id: data.id,
         uniqTradeId: data.uniqTradeId,
+        tradeMethod: data.tradeMethod,
+        closeTarget: data.closeTarget,
         profit: getProfitLoss(
           data?.tradeType,
           data?.targetPrice,
@@ -280,6 +284,44 @@ const TradeList = ({ option }) => {
       }
     }
   };
+
+  function monitorCryptoPrices(cryptoList, n) {
+    if (notifyEmailList?.length > 0) {
+      // Check price fluctuation every second
+      cryptoList.forEach((crypto, index) => {
+        if (crypto.tradeMethod == 1) {
+          const currentPrice = getCoinDetails(
+            crypto?.symbole,
+            'latestTradedPrice',
+          );
+
+          // Calculate the price range
+          const minPrice = currentPrice * (1 - n / 100);
+          const maxPrice = currentPrice * (1 + n / 100);
+
+          // Get the latest price of the crypto (You may need to call an API for this)
+          const latestPrice = crypto?.closeTarget; // Dummy function for fetching the latest price
+          // Check if the latest price is within the range
+          if (latestPrice >= minPrice && latestPrice <= maxPrice) {
+            // Execute the order if within range
+            setCryptoData(cryptoData.filter(el => el.id != crypto.id));
+            setSelectRecId(crypto.id);
+            handleSubmit(crypto);
+          }
+        }
+      });
+    }
+    return null;
+  }
+
+  useEffect(() => {
+    if (notifyEmailList?.length > 0) {
+      monitorCryptoPrices(notifyEmailList, 0.1, (crypto, latestPrice) => {
+        console.log(crypto);
+      });
+    }
+  }, [cryptoData]);
+
   useEffect(() => {
     setPageLoader(false);
   }, []);
@@ -460,6 +502,17 @@ const TradeList = ({ option }) => {
                         <th
                           scope='col'
                           className='text-center cursor-pointer text-nowrap'
+                          onClick={() => sortData(6, order == 0 ? 1 : 0)}
+                        >
+                          Trade Method
+                          <span className='iconPosition'>
+                            <i className='fa fa-solid fa-sort-up position-absolute mx-1 mt-1 text-dull asc-6'></i>
+                            <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-6'></i>
+                          </span>
+                        </th>
+                        <th
+                          scope='col'
+                          className='text-center cursor-pointer text-nowrap'
                           onClick={() => sortData(7, order == 0 ? 1 : 0)}
                         >
                           Trade Time
@@ -535,6 +588,17 @@ const TradeList = ({ option }) => {
                                   ) : (
                                     <span className='badge bg-danger'>
                                       Sell
+                                    </span>
+                                  )}{' '}
+                                </td>
+                                <td className='text-center text-nowrap'>
+                                  {d?.tradeMethod == 0 ? (
+                                    <span className='badge bg-success'>
+                                      Normal
+                                    </span>
+                                  ) : (
+                                    <span className='badge bg-danger'>
+                                      Algo
                                     </span>
                                   )}{' '}
                                 </td>

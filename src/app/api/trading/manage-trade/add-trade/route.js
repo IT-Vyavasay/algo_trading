@@ -20,6 +20,8 @@ export async function POST(req, res) {
       table,
       id,
       uniqTradeId,
+      tradeMethod,
+      closeTarget,
     } = await req.json();
 
     try {
@@ -31,6 +33,8 @@ export async function POST(req, res) {
       validate_string(`${tradOnLTP}`, 'tradOnLTP');
       validate_string(`${targetPrice}`, 'target price');
       validate_string(`${uniqTradeId}`, 'uniq tradeId');
+      validate_string(`${tradeMethod}`, 'trade method');
+      validate_string(`${closeTarget}`, 'close target');
     } catch (e) {
       console.log('first', e);
       return NextResponse.json({ message: e }, { status: 400 });
@@ -56,16 +60,10 @@ export async function POST(req, res) {
       'select * from activetrade where uniqTradeId = ?',
       [uniqTradeId],
     );
-    try {
-      if (!isTradExist) {
-        console.log('isTradExist', isTradExist);
-      }
-    } catch (error) {
-      console.log('first', error);
-    }
+
     if (!isTradExist) {
       await sql_query(
-        'insert into activetrade (symbole,tradedPrice, uniqTradeId,targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,createdOn) values (?,?,?,?,?,?,?,?,?,?)',
+        'insert into activetrade (symbole,tradedPrice, uniqTradeId,targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,tradeMethod,closeTarget,createdOn) values (?,?,?,?,?,?,?,?,?,?,?,?)',
         [
           symbole,
           latestTradedPrice,
@@ -76,6 +74,8 @@ export async function POST(req, res) {
           tradeType,
           tradeTime,
           now,
+          tradeMethod,
+          closeTarget,
           now,
         ],
       );

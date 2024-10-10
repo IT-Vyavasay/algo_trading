@@ -52,11 +52,7 @@ export async function POST(req, res) {
       closedPrice =
         closedPrice + (closedPrice * brokerageData?.brokerage) / 100;
     }
-    if (table == 'pandingorder') {
-      await sql_query('delete from pandingorder where activeTradeId = ?', [id]);
-    } else {
-      await sql_query('delete from activetrade where activeTradeId = ?', [id]);
-    }
+
     await sql_query(
       'insert into closetrade (symbole,tradedPrice, uniqTradeId,targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,createdOn, profit, closedPrice, executedPrice) values (?,?,?,?,?,?,?,?,?,?,?,?,?)',
       [
@@ -75,7 +71,11 @@ export async function POST(req, res) {
         executedPrice,
       ],
     );
-
+    if (table == 'pandingorder') {
+      await sql_query('delete from pandingorder where activeTradeId = ?', [id]);
+    } else {
+      await sql_query('delete from activetrade where activeTradeId = ?', [id]);
+    }
     return NextResponse.json(
       { message: 'Order closed successfully' },
       { status: 200 },
