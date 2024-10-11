@@ -12,13 +12,13 @@ export async function POST(req, res) {
       symbole,
       latestTradedPrice,
       profit,
-      closedPrice,
+      tradeClosePrice,
       executedPrice,
       quantity,
       tradeTime,
       tradeType,
       tradOnLTP,
-      targetPrice,
+      tradeOpenPrice,
       id,
       table,
       uniqTradeId,
@@ -29,13 +29,13 @@ export async function POST(req, res) {
       validate_string(`${latestTradedPrice}`, 'latest tradedP price');
       validate_string(`${quantity}`, 'quantity');
       validate_string(`${profit}`, 'profit');
-      validate_string(`${closedPrice}`, 'closed price');
+      validate_string(`${tradeClosePrice}`, 'closed price');
       validate_string(`${executedPrice}`, 'executed price');
       validate_string(`${tradeTime}`, 'trade time');
       validate_string(`${tradeType}`, 'trade type');
       validate_string(`${tradOnLTP}`, 'tradOnLTP');
       validate_string(`${uniqTradeId}`, 'uniqTrade Id');
-      validate_string(`${targetPrice}`, 'target price');
+      validate_string(`${tradeOpenPrice}`, 'target price');
       validate_string(`${stopLoss}`, 'stopLoss');
       validate_string(id ? `${id}` : '', 'record id');
     } catch (e) {
@@ -49,11 +49,11 @@ export async function POST(req, res) {
     );
 
     if (tradeType == 0) {
-      closedPrice =
-        closedPrice - (closedPrice * brokerageData?.brokerage) / 100;
+      tradeClosePrice =
+        tradeClosePrice - (tradeClosePrice * brokerageData?.brokerage) / 100;
     } else if (tradeType == 1) {
-      closedPrice =
-        closedPrice + (closedPrice * brokerageData?.brokerage) / 100;
+      tradeClosePrice =
+        tradeClosePrice + (tradeClosePrice * brokerageData?.brokerage) / 100;
     }
     const isTradExist = await sql_query(
       'select * from closetrade where uniqTradeId = ?',
@@ -62,12 +62,12 @@ export async function POST(req, res) {
 
     if (!isTradExist) {
       await sql_query(
-        'insert into closetrade (symbole,tradedPrice, uniqTradeId,targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,createdOn, profit, closedPrice, executedPrice,stopLoss) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        'insert into closetrade (symbole,tradedPrice, uniqTradeId,tradeOpenPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,createdOn, profit, tradeClosePrice, executedPrice,stopLoss) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
         [
           symbole,
           latestTradedPrice,
           uniqTradeId,
-          targetPrice,
+          tradeOpenPrice,
           quantity,
           tradOnLTP,
           tradeType,
@@ -75,7 +75,7 @@ export async function POST(req, res) {
           now,
           now,
           profit,
-          closedPrice,
+          tradeClosePrice,
           executedPrice,
           stopLoss,
         ],

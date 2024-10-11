@@ -22,13 +22,13 @@ export async function GET(req, res) {
     let query = '',
       filter = [],
       limit = process.env.PAGELIMIT;
-    query += `SELECT activeTradeId,symbole,tradeMethod,stopLoss,closeTarget,tradedPrice, targetPrice,quantity,tradeOnLTP,tradeType,tradeTime,uniqTradeId, orderExecuteTime,createdOn FROM activetrade`;
+    query += `SELECT activeTradeId,symbole,tradeMethod,stopLoss,tradeClosePrice,tradedPrice, tradeOpenPrice,quantity,tradeOnLTP,tradeType,tradeTime,uniqTradeId, orderExecuteTime,createdOn FROM activetrade`;
 
     let fields = [
       'createdOn',
       'symbole',
       'tradedPrice',
-      'targetPrice',
+      'tradeOpenPrice',
       'quantity',
       'tradeOnLTP',
       'tradeType',
@@ -73,12 +73,12 @@ export async function GET(req, res) {
           symbole: j.symbole ? j.symbole : '',
           id: j.activeTradeId,
           tradedPrice: j.tradedPrice ? j.tradedPrice : '',
-          targetPrice: j.targetPrice ? j.targetPrice : '',
+          tradeOpenPrice: j.tradeOpenPrice ? j.tradeOpenPrice : '',
           quantity: j.quantity ? j.quantity : '',
           tradeOnLTP: j.tradeOnLTP ? j.tradeOnLTP : '',
           tradeType: j.tradeType,
           tradeMethod: j.tradeMethod,
-          closeTarget: j.closeTarget,
+          tradeClosePrice: j.tradeClosePrice,
           stopLoss: j.stopLoss,
           uniqTradeId: j.uniqTradeId,
           tradeTime: j.tradeTime ? j.tradeTime : '',

@@ -71,14 +71,42 @@ export default function Dashboard() {
     getDashboardData();
     setPageLoader(false);
   }, []);
+  const scrap = () => {
+    const puppeteer = require('puppeteer');
 
+    async function getRelianceSharePrice() {
+      // Launch the Puppeteer browser
+      const browser = await puppeteer.launch();
+      const page = await browser.newPage();
+
+      // Go to Google Finance Reliance page (or any stock website)
+      await page.goto('https://www.google.com/finance/quote/RELIANCE:NSE');
+
+      // Wait for the element that contains the price to load (can be customized)
+      await page.waitForSelector('.YMlKec.fxKbKc');
+
+      // Extract the share price text
+      const price = await page.$eval('.YMlKec.fxKbKc', el => el.textContent);
+
+      // Output the price to the console
+      console.log(`Reliance Share Price: ${price}`);
+
+      // Close the browser
+      await browser.close();
+    }
+
+    // Call the function
+    // getRelianceSharePrice();
+  };
   return (
     <>
       <div className='content-body btn-page'>
         <Toaster position='top-right' reverseOrder={false} />
         <div className='container-fluid p-4'>
           <div className='row justify-content-between'>
-            <h3 className='page-title-main'>Dashboard</h3>
+            <h3 className='page-title-main' onClick={scrap}>
+              Dashboard
+            </h3>
             <button className='btn btn-primary' onClick={clearTableData}>
               {clearLoader && <i className='fa fa-refresh'></i>}
               {` `}

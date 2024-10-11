@@ -66,7 +66,7 @@ const TradeList = ({ option }) => {
   const handleShow = coinData => {
     set_coin_modal_data({
       ...coinData,
-      targetPrice: coinData.latestTradedPrice,
+      tradeOpenPrice: coinData.latestTradedPrice,
       tradOnLTP: 1,
       quantity: 1,
     });
@@ -177,13 +177,13 @@ const TradeList = ({ option }) => {
 
   const getProfitLossBadge = (
     tradeType,
-    targetPrice,
+    tradeOpenPrice,
     latestTradedPrice,
     quantity = 1,
   ) => {
     if (tradeType == 0) {
       const total =
-        parseFloat(latestTradedPrice - targetPrice) * parseInt(quantity);
+        parseFloat(latestTradedPrice - tradeOpenPrice) * parseInt(quantity);
       return (
         <span
           className={`badge bg-${total.toFixed(2) > 0 ? 'success' : 'danger'}`}
@@ -193,7 +193,7 @@ const TradeList = ({ option }) => {
       );
     } else {
       const total =
-        parseFloat(targetPrice - latestTradedPrice) * parseInt(quantity);
+        parseFloat(tradeOpenPrice - latestTradedPrice) * parseInt(quantity);
       return (
         <span
           className={`badge bg-${total.toFixed(2) > 0 ? 'success' : 'danger'}`}
@@ -205,17 +205,17 @@ const TradeList = ({ option }) => {
   };
   const getProfitLoss = (
     tradeType,
-    targetPrice,
+    tradeOpenPrice,
     latestTradedPrice,
     quantity = 1,
   ) => {
     if (tradeType == 0) {
       const total =
-        parseFloat(latestTradedPrice - targetPrice) * parseInt(quantity);
+        parseFloat(latestTradedPrice - tradeOpenPrice) * parseInt(quantity);
       return total.toFixed(2);
     } else {
       const total =
-        parseFloat(targetPrice - latestTradedPrice) * parseInt(quantity);
+        parseFloat(tradeOpenPrice - latestTradedPrice) * parseInt(quantity);
       return total.toFixed(2);
     }
   };
@@ -232,14 +232,14 @@ const TradeList = ({ option }) => {
         validate_string(`${data.tradOnLTP}`, 'tradOnLTP');
         validate_string(`${data.quantity}`, 'quantity');
         validate_string(`${data.tradeMethod}`, 'trade method');
-        validate_string(`${data.closeTarget}`, 'close target');
-        validate_string(`${data.targetPrice}`, 'target price');
+        validate_string(`${data.tradeClosePrice}`, 'close target');
+        validate_string(`${data.tradeOpenPrice}`, 'target price');
         validate_string(`${data.uniqTradeId}`, 'uniq tradeId');
         validate_string(`${data.activeTradeId}`, 'panding order id');
         validate_string(
           getProfitLoss(
             data?.tradeType,
-            data?.targetPrice,
+            data?.tradeOpenPrice,
             getCoinDetails(data?.symbole, 'latestTradedPrice'),
             data?.quantity,
           ),
@@ -267,14 +267,15 @@ const TradeList = ({ option }) => {
         tradeType: data.tradeType,
         tradOnLTP: data.tradOnLTP,
         quantity: data.quantity,
-        targetPrice: data.targetPrice,
+        tradeOpenPrice: data.tradeOpenPrice,
         id: data.id,
         uniqTradeId: data.uniqTradeId,
+        stopLoss: data.tradeMethod == 1 ? data.stopLoss : 0,
         tradeMethod: data.tradeMethod,
-        closeTarget: data.closeTarget,
+        tradeClosePrice: data.tradeClosePrice,
         profit: getProfitLoss(
           data?.tradeType,
-          data?.targetPrice,
+          data?.tradeOpenPrice,
           getCoinDetails(data?.symbole, 'latestTradedPrice'),
           data?.quantity,
         ),
@@ -322,16 +323,17 @@ const TradeList = ({ option }) => {
           const maxPrice = currentPrice + percentValue;
 
           // Get the latest price of the crypto (You may need to call an API for this)
-          const targetPrice = crypto?.closeTarget; // Dummy function for fetching the latest price
+          const tradeClosePrice = crypto?.tradeClosePrice; // Dummy function for fetching the latest price
           const stopLossPrice = crypto?.stopLoss; // Dummy function for fetching the latest price
           // Check if the latest price is within the range
           console.log('crypto', crypto);
           console.log('minPrice, maxPrice', { maxPrice, minPrice });
-          console.log('targetPrice , stopLossPrice', {
-            targetPrice,
+          console.log('tradeClosePrice , stopLossPrice', 'tradeOpenPrice', {
+            tradeClosePrice,
             stopLossPrice,
+            tradeOpenPrice: crypto?.tradeOpenPrice,
           });
-          if (targetPrice >= minPrice && targetPrice <= maxPrice) {
+          if (tradeClosePrice >= minPrice && tradeClosePrice <= maxPrice) {
             // Execute the order if within range
             setCryptoData(cryptoData.filter(el => el.id != crypto.id));
             setSelectRecId(crypto.id);
@@ -353,7 +355,7 @@ const TradeList = ({ option }) => {
 
   useEffect(() => {
     if (notifyEmailList?.length > 0) {
-      monitorCryptoPrices(notifyEmailList, 0.1, crypto => {
+      monitorCryptoPrices(notifyEmailList, 0.01, crypto => {
         console.log(crypto);
       });
     }
@@ -468,28 +470,7 @@ const TradeList = ({ option }) => {
                             <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-1'></i>
                           </span>
                         </th>
-                        {/* <th
-                          scope='col'
-                          className='text-center cursor-pointer text-nowrap'
-                          onClick={() => sortData(2, order == 0 ? 1 : 0)}
-                        >
-                          Traded Price
-                          <span className='iconPosition'>
-                            <i className='fa fa-solid fa-sort-up position-absolute mx-1 mt-1 text-dull asc-2'></i>
-                            <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-2'></i>
-                          </span>
-                        </th> */}
-                        <th
-                          scope='col'
-                          className='text-center cursor-pointer text-nowrap'
-                          onClick={() => sortData(3, order == 0 ? 1 : 0)}
-                        >
-                          Target Price
-                          <span className='iconPosition'>
-                            <i className='fa fa-solid fa-sort-up position-absolute mx-1 mt-1 text-dull asc-3'></i>
-                            <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-3'></i>
-                          </span>
-                        </th>
+
                         <th
                           scope='col'
                           className='text-center cursor-pointer text-nowrap'
@@ -501,8 +482,35 @@ const TradeList = ({ option }) => {
                           className='text-center cursor-pointer text-nowrap'
                           onClick={() => sortData(3, order == 0 ? 1 : 0)}
                         >
-                          Profit/Loss
+                          Trade Open
+                          <span className='iconPosition'>
+                            <i className='fa fa-solid fa-sort-up position-absolute mx-1 mt-1 text-dull asc-3'></i>
+                            <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-3'></i>
+                          </span>
                         </th>
+                        <th
+                          scope='col'
+                          className='text-center cursor-pointer text-nowrap'
+                          onClick={() => sortData(3, order == 0 ? 1 : 0)}
+                        >
+                          Target
+                          <span className='iconPosition'>
+                            <i className='fa fa-solid fa-sort-up position-absolute mx-1 mt-1 text-dull asc-3'></i>
+                            <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-3'></i>
+                          </span>
+                        </th>
+                        <th
+                          scope='col'
+                          className='text-center cursor-pointer text-nowrap'
+                          onClick={() => sortData(3, order == 0 ? 1 : 0)}
+                        >
+                          Stop Loss
+                          <span className='iconPosition'>
+                            <i className='fa fa-solid fa-sort-up position-absolute mx-1 mt-1 text-dull asc-3'></i>
+                            <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-3'></i>
+                          </span>
+                        </th>
+
                         <th
                           scope='col'
                           className='text-center cursor-pointer text-nowrap'
@@ -517,14 +525,11 @@ const TradeList = ({ option }) => {
                         <th
                           scope='col'
                           className='text-center cursor-pointer text-nowrap'
-                          onClick={() => sortData(5, order == 0 ? 1 : 0)}
+                          onClick={() => sortData(3, order == 0 ? 1 : 0)}
                         >
-                          Trade On LTP
-                          <span className='iconPosition'>
-                            <i className='fa fa-solid fa-sort-up position-absolute mx-1 mt-1 text-dull asc-5'></i>
-                            <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-5'></i>
-                          </span>
+                          Profit/Loss
                         </th>
+
                         <th
                           scope='col'
                           className='text-center cursor-pointer text-nowrap'
@@ -536,17 +541,7 @@ const TradeList = ({ option }) => {
                             <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-6'></i>
                           </span>
                         </th>
-                        <th
-                          scope='col'
-                          className='text-center cursor-pointer text-nowrap'
-                          onClick={() => sortData(6, order == 0 ? 1 : 0)}
-                        >
-                          Trade Method
-                          <span className='iconPosition'>
-                            <i className='fa fa-solid fa-sort-up position-absolute mx-1 mt-1 text-dull asc-6'></i>
-                            <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-6'></i>
-                          </span>
-                        </th>
+
                         <th
                           scope='col'
                           className='text-center cursor-pointer text-nowrap'
@@ -570,6 +565,17 @@ const TradeList = ({ option }) => {
                             <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-9'></i>
                           </span>
                         </th>
+                        <th
+                          scope='col'
+                          className='text-center cursor-pointer text-nowrap'
+                          onClick={() => sortData(6, order == 0 ? 1 : 0)}
+                        >
+                          Trade Method
+                          <span className='iconPosition'>
+                            <i className='fa fa-solid fa-sort-up position-absolute mx-1 mt-1 text-dull asc-6'></i>
+                            <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-6'></i>
+                          </span>
+                        </th>
                         <th scope='col'>Action</th>
                       </tr>
                     </thead>
@@ -584,10 +590,6 @@ const TradeList = ({ option }) => {
                                 <td className='text-center text-nowrap'>
                                   {d?.symbole ? d?.symbole : '-'}{' '}
                                 </td>
-
-                                <td className='text-center text-nowrap'>
-                                  {d?.targetPrice ? d?.targetPrice : '-'}{' '}
-                                </td>
                                 <td className='text-center text-nowrap'>
                                   {getCoinDetails(
                                     d?.symbole,
@@ -595,9 +597,23 @@ const TradeList = ({ option }) => {
                                   )}
                                 </td>
                                 <td className='text-center text-nowrap'>
+                                  {d?.tradeOpenPrice ? d?.tradeOpenPrice : '-'}{' '}
+                                </td>
+                                <td className='text-center text-nowrap'>
+                                  {d?.tradeClosePrice
+                                    ? d?.tradeClosePrice
+                                    : '-'}{' '}
+                                </td>
+                                <td className='text-center text-nowrap'>
+                                  {d?.stopLoss ? d?.stopLoss : '-'}{' '}
+                                </td>
+                                <td className='text-center text-nowrap'>
+                                  {d?.quantity ? d?.quantity : '-'}{' '}
+                                </td>
+                                <td className='text-center text-nowrap'>
                                   {getProfitLossBadge(
                                     d?.tradeType,
-                                    d?.targetPrice,
+                                    d?.tradeOpenPrice,
                                     getCoinDetails(
                                       d?.symbole,
                                       'latestTradedPrice',
@@ -605,18 +621,7 @@ const TradeList = ({ option }) => {
                                     d?.quantity,
                                   )}
                                 </td>
-                                <td className='text-center text-nowrap'>
-                                  {d?.quantity ? d?.quantity : '-'}{' '}
-                                </td>
-                                <td className='text-center text-nowrap'>
-                                  {d?.tradeOnLTP ? (
-                                    <span className='badge bg-success'>
-                                      Yes
-                                    </span>
-                                  ) : (
-                                    <span className='badge bg-danger'>No</span>
-                                  )}{' '}
-                                </td>
+
                                 <td className='text-center text-nowrap'>
                                   {d?.tradeType == 0 ? (
                                     <span className='badge bg-success'>
@@ -625,17 +630,6 @@ const TradeList = ({ option }) => {
                                   ) : (
                                     <span className='badge bg-danger'>
                                       Sell
-                                    </span>
-                                  )}{' '}
-                                </td>
-                                <td className='text-center text-nowrap'>
-                                  {d?.tradeMethod == 0 ? (
-                                    <span className='badge bg-success'>
-                                      Normal
-                                    </span>
-                                  ) : (
-                                    <span className='badge bg-danger'>
-                                      Algo
                                     </span>
                                   )}{' '}
                                 </td>
@@ -651,6 +645,18 @@ const TradeList = ({ option }) => {
                                   onClick={() => console.log(d)}
                                 >
                                   {convert_date(d.createdOn)}{' '}
+                                </td>
+
+                                <td className='text-center text-nowrap'>
+                                  {d?.tradeMethod == 0 ? (
+                                    <span className='badge bg-success'>
+                                      Normal
+                                    </span>
+                                  ) : (
+                                    <span className='badge bg-danger'>
+                                      Algo
+                                    </span>
+                                  )}{' '}
                                 </td>
                                 <td className='text-center text-nowrap'>
                                   <div className='d-flex justify-content-start'>
@@ -712,7 +718,7 @@ const TradeList = ({ option }) => {
                                 ? 'tableLoaderBox'
                                 : ''
                             }`}
-                            colSpan={12}
+                            colSpan={13}
                           >
                             {loader ? (
                               <div
@@ -845,12 +851,12 @@ const TradeList = ({ option }) => {
                   <div className='input-group'>
                     <input
                       name='ltp'
-                      value={coin_modal_data?.targetPrice}
+                      value={coin_modal_data?.tradeOpenPrice}
                       type='text'
                       onChange={e =>
                         set_coin_modal_data({
                           ...coin_modal_data,
-                          targetPrice: e.target.value
+                          tradeOpenPrice: e.target.value
                             .replace(/[^0-9.]/g, '')
                             .replace(/(\..*)\./g, '$1'),
                         })

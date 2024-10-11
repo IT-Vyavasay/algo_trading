@@ -16,12 +16,12 @@ export async function POST(req, res) {
       tradeTime,
       tradeType,
       tradOnLTP,
-      targetPrice,
+      tradeOpenPrice,
       table,
       id,
       uniqTradeId,
       tradeMethod,
-      closeTarget,
+      tradeClosePrice,
       stopLoss,
     } = await req.json();
 
@@ -32,10 +32,10 @@ export async function POST(req, res) {
       validate_string(`${tradeTime}`, 'trade time');
       validate_string(`${tradeType}`, 'trade type');
       validate_string(`${tradOnLTP}`, 'tradOnLTP');
-      validate_string(`${targetPrice}`, 'target price');
+      validate_string(`${tradeOpenPrice}`, 'target price');
       validate_string(`${uniqTradeId}`, 'uniq tradeId');
       validate_string(`${tradeMethod}`, 'trade method');
-      validate_string(`${closeTarget}`, 'close target');
+      validate_string(`${tradeClosePrice}`, 'close target');
       validate_string(`${stopLoss}`, 'stopLoss');
     } catch (e) {
       console.log('first', e);
@@ -48,11 +48,11 @@ export async function POST(req, res) {
     );
 
     if (tradeType == 0) {
-      targetPrice =
-        targetPrice + (targetPrice * brokerageData?.brokerage) / 100;
+      tradeOpenPrice =
+        tradeOpenPrice + (tradeOpenPrice * brokerageData?.brokerage) / 100;
     } else if (tradeType == 1) {
-      targetPrice =
-        targetPrice - (targetPrice * brokerageData?.brokerage) / 100;
+      tradeOpenPrice =
+        tradeOpenPrice - (tradeOpenPrice * brokerageData?.brokerage) / 100;
     }
 
     const isTradExist = await sql_query(
@@ -62,19 +62,19 @@ export async function POST(req, res) {
 
     if (!isTradExist) {
       await sql_query(
-        'insert into activetrade (symbole,tradedPrice, uniqTradeId,targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,tradeMethod,closeTarget,stopLoss,createdOn) values (?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        'insert into activetrade (symbole,tradedPrice, uniqTradeId,tradeOpenPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,tradeMethod,tradeClosePrice,stopLoss,createdOn) values (?,?,?,?,?,?,?,?,?,?,?,?,?)',
         [
           symbole,
           latestTradedPrice,
           uniqTradeId,
-          targetPrice,
+          tradeOpenPrice,
           quantity,
           tradOnLTP,
           tradeType,
           tradeTime,
           now,
           tradeMethod,
-          closeTarget,
+          tradeClosePrice,
           stopLoss,
           now,
         ],
