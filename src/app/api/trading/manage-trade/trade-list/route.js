@@ -22,7 +22,7 @@ export async function GET(req, res) {
     let query = '',
       filter = [],
       limit = process.env.PAGELIMIT;
-    query += `SELECT activeTradeId,symbole,tradeMethod,closeTarget,tradedPrice, targetPrice,quantity,tradeOnLTP,tradeType,tradeTime,uniqTradeId, orderExecuteTime,createdOn FROM activetrade`;
+    query += `SELECT activeTradeId,symbole,tradeMethod,stopLoss,closeTarget,tradedPrice, targetPrice,quantity,tradeOnLTP,tradeType,tradeTime,uniqTradeId, orderExecuteTime,createdOn FROM activetrade`;
 
     let fields = [
       'createdOn',
@@ -79,6 +79,7 @@ export async function GET(req, res) {
           tradeType: j.tradeType,
           tradeMethod: j.tradeMethod,
           closeTarget: j.closeTarget,
+          stopLoss: j.stopLoss,
           uniqTradeId: j.uniqTradeId,
           tradeTime: j.tradeTime ? j.tradeTime : '',
           orderExecuteTime: j.orderExecuteTime ? j.orderExecuteTime : '',

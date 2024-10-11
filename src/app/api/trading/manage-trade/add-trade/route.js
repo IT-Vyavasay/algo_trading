@@ -22,6 +22,7 @@ export async function POST(req, res) {
       uniqTradeId,
       tradeMethod,
       closeTarget,
+      stopLoss,
     } = await req.json();
 
     try {
@@ -35,6 +36,7 @@ export async function POST(req, res) {
       validate_string(`${uniqTradeId}`, 'uniq tradeId');
       validate_string(`${tradeMethod}`, 'trade method');
       validate_string(`${closeTarget}`, 'close target');
+      validate_string(`${stopLoss}`, 'stopLoss');
     } catch (e) {
       console.log('first', e);
       return NextResponse.json({ message: e }, { status: 400 });
@@ -60,7 +62,7 @@ export async function POST(req, res) {
 
     if (!isTradExist) {
       await sql_query(
-        'insert into activetrade (symbole,tradedPrice, uniqTradeId,targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,tradeMethod,closeTarget,createdOn) values (?,?,?,?,?,?,?,?,?,?,?,?)',
+        'insert into activetrade (symbole,tradedPrice, uniqTradeId,targetPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,tradeMethod,closeTarget,stopLoss,createdOn) values (?,?,?,?,?,?,?,?,?,?,?,?,?)',
         [
           symbole,
           latestTradedPrice,
@@ -73,6 +75,7 @@ export async function POST(req, res) {
           now,
           tradeMethod,
           closeTarget,
+          stopLoss,
           now,
         ],
       );

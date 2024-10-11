@@ -264,6 +264,7 @@ const PandingOrderList = ({ option }) => {
         quantity: data.quantity,
         tradeMethod: data.tradeMethod,
         closeTarget: data.closeTarget,
+        stopLoss: data.stopLoss,
         targetPrice: data.targetPrice,
         uniqTradeId: data.uniqTradeId,
         id: data.id,

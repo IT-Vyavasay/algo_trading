@@ -31,6 +31,11 @@ const CoinList = ({ option }) => {
     newPassword: '',
     confirmPassword: '',
   });
+  const [orderExeutionPrice, setOrderExeutionPrice] = useState({
+    stopLoss: 0,
+    closeTarget: 0,
+  });
+
   const handleClose = () => {
     setShow(false);
     setFields({
@@ -47,10 +52,39 @@ const CoinList = ({ option }) => {
       quantity: 1,
       tradeMethod: 1,
       closeTarget: coinData.latestTradedPrice,
+      stopLoss: coinData.latestTradedPrice,
+    });
+    setOrderExeutionPrice({
+      stopLoss: 0,
+      closeTarget: 0,
     });
     setShow(true);
   };
-
+  useEffect(() => {
+    console.log(
+      (orderExeutionPrice.closeTarget == 0
+        ? 0
+        : parseFloat(orderExeutionPrice.closeTarget)) / 100,
+    );
+    const currentPrice = parseFloat(
+      getCoinDetails(coin_modal_data?.symbole, 'latestTradedPrice'),
+    );
+    set_coin_modal_data({
+      ...coin_modal_data,
+      stopLoss: parseFloat(
+        currentPrice *
+          (orderExeutionPrice.stopLoss == 0
+            ? 1
+            : parseFloat(orderExeutionPrice.stopLoss == 0) + 1),
+      ).toFixed(2),
+      closeTarget: parseFloat(
+        currentPrice +
+          (orderExeutionPrice.closeTarget == 0
+            ? 0
+            : parseFloat(orderExeutionPrice.closeTarget) + 1),
+      ).toFixed(2),
+    });
+  }, [orderExeutionPrice]);
   const handleSubmit = async data => {
     if (!loading) {
       try {
@@ -63,6 +97,7 @@ const CoinList = ({ option }) => {
         validate_string(`${data.targetPrice}`, 'target price');
         validate_string(`${data.tradeMethod}`, 'trade method');
         validate_string(`${data.closeTarget}`, 'close target');
+        validate_string(`${data.stopLoss}`, 'stopLoss');
       } catch (e) {
         toast.error(e);
         return false;
@@ -80,6 +115,7 @@ const CoinList = ({ option }) => {
         uniqTradeId: generateTradeId(data.latestTradedPrice),
         tradeMethod: data.tradeMethod,
         closeTarget: data.closeTarget,
+        stopLoss: data.stopLoss,
       };
       const add_user = await fetchApi(
         data.tradOnLTP == 1
@@ -478,6 +514,80 @@ const CoinList = ({ option }) => {
                     <div className='input-group-append'>
                       <div className='input-group-text' id='btnGroupAddon'>
                         <i className={`${`   mdi mdi-currency-usd  fs-4`}`}></i>{' '}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className='mb-2'>
+                <div>
+                  <label className='col-form-label'>Enter Stoploss Price</label>
+                </div>
+                <div className={`inputContainer form-group d-flex w-100`}>
+                  <div className='input-group'>
+                    <input
+                      name='ltp'
+                      value={coin_modal_data?.stopLoss}
+                      type='text'
+                      onChange={e =>
+                        set_coin_modal_data({
+                          ...coin_modal_data,
+                          stopLoss: e.target.value
+                            .replace(/[^0-9.]/g, '')
+                            .replace(/(\..*)\./g, '$1'),
+                        })
+                      }
+                      className='form-control'
+                    />
+                    <div className='input-group-append'>
+                      <div className='input-group-text' id='btnGroupAddon'>
+                        <i className={`${`   mdi mdi-currency-usd  fs-4`}`}></i>{' '}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className='mb-2'>
+                <div>
+                  <label className='col-form-label'>
+                    Stoploss/Target in prc
+                  </label>
+                </div>
+
+                <div className={`inputContainer form-group d-flex w-100`}>
+                  <div className='input-group'>
+                    <input
+                      name='stoploss in prc'
+                      value={orderExeutionPrice.stopLoss}
+                      type='text'
+                      onChange={e =>
+                        setOrderExeutionPrice({
+                          ...orderExeutionPrice,
+                          stopLoss: e.target.value
+                            .replace(/[^0-9.]/g, '')
+                            .replace(/(\..*)\./g, '$1'),
+                        })
+                      }
+                      className='form-control'
+                    />
+                    <input
+                      name='close target in prc'
+                      value={orderExeutionPrice.closeTarget}
+                      type='text'
+                      onChange={e =>
+                        setOrderExeutionPrice({
+                          ...orderExeutionPrice,
+                          closeTarget: e.target.value
+                            .replace(/[^0-9.]/g, '')
+                            .replace(/(\..*)\./g, '$1'),
+                        })
+                      }
+                      className='form-control'
+                    />
+
+                    <div className='input-group-append'>
+                      <div className='input-group-text' id='btnGroupAddon'>
+                        <i className={`${`   mdi mdi-percent  fs-4`}`}></i>{' '}
                       </div>
                     </div>
                   </div>

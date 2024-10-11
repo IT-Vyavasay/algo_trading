@@ -438,6 +438,9 @@ export function passDec(encryptedMessage, secret) {
   );
 }
 
+export function calculatePercentage(value, percentage) {
+  return (value * percentage) / 100;
+}
 export function passEnc(textToEncrypt, secret) {
   var encryptionMethod = 'AES-256-CBC';
   var iv = secret.substr(0, 16);

@@ -4,6 +4,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import Table_Loader from '../../../../components/include/TableLoader';
 import {
+  calculatePercentage,
   chk_password,
   convert_date,
   convert_date_upto_second,
@@ -309,20 +310,37 @@ const TradeList = ({ option }) => {
       // Check price fluctuation every second
       cryptoList.forEach((crypto, index) => {
         if (crypto.tradeMethod == 1) {
-          const currentPrice = getCoinDetails(
-            crypto?.symbole,
-            'latestTradedPrice',
+          const currentPrice = parseFloat(
+            getCoinDetails(crypto?.symbole, 'latestTradedPrice'),
           );
 
           // Calculate the price range
-          const minPrice = currentPrice * (1 - n / 100);
-          const maxPrice = currentPrice * (1 + n / 100);
+          const percentValue = parseFloat(
+            calculatePercentage(currentPrice, parseFloat(n)),
+          );
+          const minPrice = currentPrice - percentValue;
+          const maxPrice = currentPrice + percentValue;
 
           // Get the latest price of the crypto (You may need to call an API for this)
-          const latestPrice = crypto?.closeTarget; // Dummy function for fetching the latest price
+          const targetPrice = crypto?.closeTarget; // Dummy function for fetching the latest price
+          const stopLossPrice = crypto?.stopLoss; // Dummy function for fetching the latest price
           // Check if the latest price is within the range
-          if (latestPrice >= minPrice && latestPrice <= maxPrice) {
+          console.log('crypto', crypto);
+          console.log('minPrice, maxPrice', { maxPrice, minPrice });
+          console.log('targetPrice , stopLossPrice', {
+            targetPrice,
+            stopLossPrice,
+          });
+          if (targetPrice >= minPrice && targetPrice <= maxPrice) {
             // Execute the order if within range
+            setCryptoData(cryptoData.filter(el => el.id != crypto.id));
+            setSelectRecId(crypto.id);
+            handleSubmit(crypto);
+            toast.success('Target price reached.');
+          } else if (stopLossPrice >= minPrice && stopLossPrice <= maxPrice) {
+            toast.error(
+              'Stop loss price reached. Please check your stop loss price.',
+            );
             setCryptoData(cryptoData.filter(el => el.id != crypto.id));
             setSelectRecId(crypto.id);
             handleSubmit(crypto);
@@ -335,7 +353,7 @@ const TradeList = ({ option }) => {
 
   useEffect(() => {
     if (notifyEmailList?.length > 0) {
-      monitorCryptoPrices(notifyEmailList, 0.1, (crypto, latestPrice) => {
+      monitorCryptoPrices(notifyEmailList, 0.1, crypto => {
         console.log(crypto);
       });
     }
