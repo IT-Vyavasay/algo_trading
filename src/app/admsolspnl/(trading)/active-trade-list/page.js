@@ -39,14 +39,14 @@ const TradeList = ({ option }) => {
   const [search, setSearch] = useState('');
   const [cryptoData, setCryptoData] = useState([]);
   const [dateRange, setDateRange] = useState(true);
-  let st = new Date(moment(startDate).format('MM/DD/YYYY')).getTime() / 1000;
+  let st = new Date(moment(startDate).format('MM/DD/YYYY')).getTime();
   let ed = endDate
     ? new Date(
         moment(moment(endDate).format('MM/DD/YYYY'))
           .add(23, 'h')
           .add(59, 'm')
           .add(59, 's'),
-      ).getTime() / 1000
+      ).getTime()
     : 0;
 
   const pagginationHandler = page => {
@@ -635,16 +635,16 @@ const TradeList = ({ option }) => {
                                 </td>
 
                                 <td className='text-center text-nowrap'>
-                                  {d?.orderExecuteTime
-                                    ? convert_date(d?.orderExecuteTime)
+                                  {d?.tradeTime
+                                    ? convert_date_upto_second(d?.tradeTime)
                                     : '-'}{' '}
                                 </td>
-
-                                <td
-                                  className='text-center text-nowrap'
-                                  onClick={() => console.log(d)}
-                                >
-                                  {convert_date(d.createdOn)}{' '}
+                                <td className='text-center text-nowrap'>
+                                  {d?.orderExecuteTime
+                                    ? convert_date_upto_second(
+                                        d?.orderExecuteTime,
+                                      )
+                                    : '-'}{' '}
                                 </td>
 
                                 <td className='text-center text-nowrap'>

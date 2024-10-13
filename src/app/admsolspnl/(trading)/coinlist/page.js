@@ -14,6 +14,7 @@ import { fetchApi } from '../../../../utils/frondend';
 import Loader from '../../../../components/include/Loader';
 import { useAuthContext } from '../../../../context/auth';
 import Modal from 'react-bootstrap/Modal';
+import { get } from 'jquery';
 const CoinList = ({ option }) => {
   const tempOption = {
     title: '',
@@ -25,6 +26,7 @@ const CoinList = ({ option }) => {
   const [show, setShow] = useState(false);
   const [loader, setLoader] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pre_coin_value, set_pre_coin_value] = useState();
   const [coin_modal_data, set_coin_modal_data] = useState({});
   const [fields, setFields] = useState({
     admPassword: '',
@@ -187,15 +189,17 @@ const CoinList = ({ option }) => {
   useEffect(() => {
     setPageLoader(false);
   }, []);
+
+  useEffect(() => {
+    set_pre_coin_value(getCoinDetails('BTCUSDT', 'latestTradedPrice'));
+  }, [cryptoData]);
   return (
     <div className='content-body btn-page'>
       <Toaster position='top-right' reverseOrder={false} />
       <div className={`container-fluid ${title !== 'incard' && 'p-4'}`}>
         <div className='row'>
           {title !== 'incard' && (
-            <h3 className='page-title-main' onClick={() => console.log(title)}>
-              Manage Coin
-            </h3>
+            <h3 className='page-title-main'>Manage Coin</h3>
           )}
 
           <div className={`col-lg-12 ${title == 'incard' && 'p-0'}`}>
@@ -203,7 +207,17 @@ const CoinList = ({ option }) => {
               {title == 'incard' && (
                 <div className='card-header d-flex align-items-center '>
                   <span className='mdi mdi-bitcoin  dashboard-voucher-icon' />
-                  <h3> Manage Coin</h3>
+                  <h3
+                    onClick={() =>
+                      console.log(
+                        getCoinDetails('BTCUSDT', 'latestTradedPrice'),
+                        pre_coin_value,
+                      )
+                    }
+                  >
+                    {' '}
+                    Manage Coin
+                  </h3>
                 </div>
               )}
               <div className='card-body'>

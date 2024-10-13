@@ -123,7 +123,7 @@ export function chk_OTP(str) {
 /* END : Input validation function */
 
 export function convert_date(date) {
-  return moment(date * 1000).format('DD, MMM YYYY hh:mm A');
+  return moment(date * 1000).format('DD, MMM YYYY hh:mm:ss A');
 }
 export function convert_date_upto_second(date) {
   return moment(date).format('DD, MMM YYYY hh:mm:ss');
@@ -168,7 +168,10 @@ export function dec(encryptedMessage, secret) {
 }
 
 export function get_timestemp() {
-  return Math.floor(new Date().getTime() / 1000);
+  const currentDate = new Date();
+  const timestamp = Math.floor(currentDate.getTime());
+  return timestamp;
+  // return Math.floor(new Date().getTime() / 1000);
 }
 
 function hasUnicode(str) {

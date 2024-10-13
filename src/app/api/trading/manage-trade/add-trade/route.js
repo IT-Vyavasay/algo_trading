@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { check_admin_login } from '../../../../../utils/backend';
-import { get_timestemp, validate_string } from '../../../../../utils/common';
+import {
+  convert_date_upto_second,
+  get_timestemp,
+  validate_string,
+} from '../../../../../utils/common';
 import { sql_query } from '../../../../../utils/dbconnect';
 export async function POST(req, res) {
   try {
@@ -54,7 +58,12 @@ export async function POST(req, res) {
       tradeOpenPrice =
         tradeOpenPrice - (tradeOpenPrice * brokerageData?.brokerage) / 100;
     }
-
+    console.log({
+      tradeTime: `${tradeTime}----------11-------${convert_date_upto_second(
+        tradeTime,
+      )}`,
+      now: `${now}--------11-------${convert_date_upto_second(now)}`,
+    });
     const isTradExist = await sql_query(
       'select * from activetrade where uniqTradeId = ?',
       [uniqTradeId],
@@ -79,15 +88,18 @@ export async function POST(req, res) {
           now,
         ],
       );
-      console.log('-----------------------------------------------', {
-        id,
-        table,
-      });
       if (table == 'pandingorder') {
         await sql_query('delete from pandingorder where activeTradeId = ?', [
           id,
         ]);
       }
+
+      console.log({
+        tradeTime: `${tradeTime}------22-----------${convert_date_upto_second(
+          tradeTime,
+        )}`,
+        now: `${now}----22-----------${convert_date_upto_second(now)}`,
+      });
       return NextResponse.json(
         { message: 'Order executed successfully' },
         { status: 200 },
