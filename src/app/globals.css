@@ -204,7 +204,9 @@ a {
 .mce-content-body {
   overflow-y: auto !important;
 }
-
+.card-header .flatpickr-input {
+  display: none !important;
+}
 /* body {
   overflow-y: auto !important;
 } */

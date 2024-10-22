@@ -114,7 +114,7 @@ const Sidebar = () => {
                   <span>Panding Order List</span>
                 </Link>
               </li>
-              <li className='menu-title'>Manage User</li>
+              {/* <li className='menu-title'>Manage User</li>
               <li className={`${path == '/userlist' ? 'mm-active' : ''}`}>
                 <Link
                   href={`/${process.env.ADMFLDR}/userlist`}
@@ -123,7 +123,7 @@ const Sidebar = () => {
                   <i className='mdi mdi-account-box-multiple'></i>
                   <span> User List </span>
                 </Link>
-              </li>
+              </li> */}
 
               {/* <li className='menu-title'>Membership</li>
               <li

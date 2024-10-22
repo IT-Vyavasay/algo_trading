@@ -806,7 +806,7 @@ const TradeList = ({ option }) => {
                                 ? 'tableLoaderBox'
                                 : ''
                             }`}
-                            colSpan={13}
+                            colSpan={14}
                           >
                             {loader ? (
                               <div

@@ -254,7 +254,7 @@ const Configuration = () => {
   };
 
   useEffect(() => {
-    GetMatrixConfigData();
+    // GetMatrixConfigData();
     setPageLoader(false);
   }, []);
 
