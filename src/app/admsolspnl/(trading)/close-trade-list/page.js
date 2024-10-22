@@ -30,7 +30,7 @@ const CloseTradeList = ({ option }) => {
   const [page, setPage] = useState(0);
   const [totalPage, setTotalPage] = useState(0);
   const [order, setOrder] = useState(1);
-  const [orderClm, setOrderClm] = useState(9);
+  const [orderClm, setOrderClm] = useState(0);
   const [searchLdr, setSearchLdr] = useState(false);
   const [notifyEmailList, setNotifyEmailList] = useState([]);
   const date = moment(new Date()).subtract(process.env.FILTERDAYS, 'days');
@@ -62,15 +62,6 @@ const CloseTradeList = ({ option }) => {
   const handleClose = () => {
     setShow(false);
   };
-  const handleShow = coinData => {
-    set_coin_modal_data({
-      ...coinData,
-      tradeOpenPrice: coinData.latestTradedPrice,
-      tradOnLTP: 1,
-      quantity: 1,
-    });
-    setShow(true);
-  };
 
   const handleSubmit = async data => {
     console.log(data);
@@ -86,7 +77,10 @@ const CloseTradeList = ({ option }) => {
         validate_string(`${coin_modal_data.tradeType}`, 'trade type');
         validate_string(`${coin_modal_data.tradOnLTP}`, 'tradOnLTP');
         validate_string(`${coin_modal_data.quantity}`, 'quantity');
-        validate_string(`${coin_modal_data.tradeOpenPrice}`, 'target price');
+        validate_string(
+          `${coin_modal_data.selectedEntryPrice}`,
+          'target price',
+        );
       } catch (e) {
         toast.error(e);
         return false;
@@ -101,7 +95,7 @@ const CloseTradeList = ({ option }) => {
         tradeType: coin_modal_data.tradeType,
         tradOnLTP: coin_modal_data.tradOnLTP,
         quantity: coin_modal_data.quantity,
-        tradeOpenPrice: coin_modal_data.tradeOpenPrice,
+        selectedEntryPrice: coin_modal_data.selectedEntryPrice,
       };
       const add_user = await fetchApi(
         'trading/manage-trade/add-trade',
@@ -226,17 +220,17 @@ const CloseTradeList = ({ option }) => {
 
   const getProfitLoss = (
     tradeType,
-    tradeOpenPrice,
+    selectedEntryPrice,
     latestTradedPrice,
     quantity = 1,
   ) => {
     if (tradeType == 0) {
       const total =
-        parseFloat(latestTradedPrice - tradeOpenPrice) * parseInt(quantity);
+        parseFloat(latestTradedPrice - selectedEntryPrice) * parseInt(quantity);
       return total.toFixed(2);
     } else {
       const total =
-        parseFloat(tradeOpenPrice - latestTradedPrice) * parseInt(quantity);
+        parseFloat(selectedEntryPrice - latestTradedPrice) * parseInt(quantity);
       return total.toFixed(2);
     }
   };
@@ -360,7 +354,29 @@ const CloseTradeList = ({ option }) => {
                           className='text-center cursor-pointer text-nowrap'
                           onClick={() => sortData(3, order == 0 ? 1 : 0)}
                         >
-                          Trade Open
+                          Selected Entry Price
+                          <span className='iconPosition'>
+                            <i className='fa fa-solid fa-sort-up position-absolute mx-1 mt-1 text-dull asc-3'></i>
+                            <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-3'></i>
+                          </span>
+                        </th>
+                        <th
+                          scope='col'
+                          className='text-center cursor-pointer text-nowrap'
+                          onClick={() => sortData(3, order == 0 ? 1 : 0)}
+                        >
+                          Actual Entry Price
+                          <span className='iconPosition'>
+                            <i className='fa fa-solid fa-sort-up position-absolute mx-1 mt-1 text-dull asc-3'></i>
+                            <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-3'></i>
+                          </span>
+                        </th>
+                        <th
+                          scope='col'
+                          className='text-center cursor-pointer text-nowrap'
+                          onClick={() => sortData(3, order == 0 ? 1 : 0)}
+                        >
+                          closedPrice
                           <span className='iconPosition'>
                             <i className='fa fa-solid fa-sort-up position-absolute mx-1 mt-1 text-dull asc-3'></i>
                             <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-3'></i>
@@ -474,12 +490,20 @@ const CloseTradeList = ({ option }) => {
                                   )}
                                 </td>
                                 <td className='text-center text-nowrap'>
-                                  {d?.tradeOpenPrice ? d?.tradeOpenPrice : '-'}{' '}
+                                  {d?.selectedEntryPrice
+                                    ? d?.selectedEntryPrice
+                                    : '-'}{' '}
                                 </td>
                                 <td className='text-center text-nowrap'>
-                                  {d?.tradeClosePrice
-                                    ? d?.tradeClosePrice
+                                  {d?.actualEntryPrice
+                                    ? d?.actualEntryPrice
                                     : '-'}{' '}
+                                </td>
+                                <td className='text-center text-nowrap'>
+                                  {d?.closedPrice ? d?.closedPrice : '-'}{' '}
+                                </td>
+                                <td className='text-center text-nowrap'>
+                                  {d?.targetPrice ? d?.targetPrice : '-'}{' '}
                                 </td>
                                 <td className='text-center text-nowrap'>
                                   {d?.stopLoss ? d?.stopLoss : '-'}{' '}
@@ -679,12 +703,12 @@ const CloseTradeList = ({ option }) => {
                   <div className='input-group'>
                     <input
                       name='ltp'
-                      value={coin_modal_data?.tradeOpenPrice}
+                      value={coin_modal_data?.selectedEntryPrice}
                       type='text'
                       onChange={e =>
                         set_coin_modal_data({
                           ...coin_modal_data,
-                          tradeOpenPrice: e.target.value
+                          selectedEntryPrice: e.target.value
                             .replace(/[^0-9.]/g, '')
                             .replace(/(\..*)\./g, '$1'),
                         })

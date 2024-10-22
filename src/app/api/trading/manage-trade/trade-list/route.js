@@ -22,13 +22,13 @@ export async function GET(req, res) {
     let query = '',
       filter = [],
       limit = process.env.PAGELIMIT;
-    query += `SELECT activeTradeId,symbole,tradeMethod,stopLoss,tradeClosePrice,tradedPrice, tradeOpenPrice,quantity,tradeOnLTP,tradeType,tradeTime,uniqTradeId, orderExecuteTime,createdOn FROM activetrade`;
+    query += `SELECT activeTradeId,actualEntryPrice,symbole,tradeMethod,stopLoss,targetPrice, selectedEntryPrice,quantity,tradeOnLTP,tradeType,tradeTime,uniqTradeId, orderExecuteTime,createdOn FROM activetrade`;
 
     let fields = [
       'createdOn',
       'symbole',
-      'tradedPrice',
-      'tradeOpenPrice',
+      'actualEntryPrice',
+      'selectedEntryPrice',
       'quantity',
       'tradeOnLTP',
       'tradeType',
@@ -72,15 +72,15 @@ export async function GET(req, res) {
           num: order == 1 ? ++ascNum : descNum--,
           symbole: j.symbole ? j.symbole : '',
           id: j.activeTradeId,
-          tradedPrice: j.tradedPrice ? j.tradedPrice : '',
-          tradeOpenPrice: j.tradeOpenPrice ? j.tradeOpenPrice : '',
+          selectedEntryPrice: j.selectedEntryPrice ? j.selectedEntryPrice : '',
           quantity: j.quantity ? j.quantity : '',
           tradeOnLTP: j.tradeOnLTP ? j.tradeOnLTP : '',
           tradeType: j.tradeType,
           tradeMethod: j.tradeMethod,
-          tradeClosePrice: j.tradeClosePrice,
+          targetPrice: j.targetPrice,
           stopLoss: j.stopLoss,
           uniqTradeId: j.uniqTradeId,
+          actualEntryPrice: j.actualEntryPrice,
           tradeTime: j.tradeTime ? j.tradeTime : '',
           orderExecuteTime: j.orderExecuteTime ? j.orderExecuteTime : '',
           createdOn: j.createdOn ? j.createdOn : '',

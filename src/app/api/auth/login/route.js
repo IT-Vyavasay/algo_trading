@@ -14,10 +14,10 @@ export async function POST(req, res) {
   // const secret = speakeasy.generateSecret({ name: 'admin' });
   // console.log(secret);
 
-  try {
-    const abc = passEnc(`Admin@123`, encryption_key('passwordKey'));
-    console.log(`abc`, abc);
-  } catch (error) {}
+  // try {
+  //   const abc = passEnc(`Admin@123`, encryption_key('passwordKey'));
+  //   console.log(`abc`, abc);
+  // } catch (error) {}
   try {
     let { email, password, repchaToken } = await req.json();
     let checkRepcha = await recaptcha(repchaToken);
@@ -39,7 +39,7 @@ export async function POST(req, res) {
       'select email,password,twoOpen from tblslr_admin where email = ? ',
       [email],
     );
-
+    console.log({ adm });
     if (
       adm &&
       passDec(adm.password, encryption_key('passwordKey')) === password

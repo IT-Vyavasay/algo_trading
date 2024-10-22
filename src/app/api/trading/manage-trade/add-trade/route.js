@@ -20,13 +20,14 @@ export async function POST(req, res) {
       tradeTime,
       tradeType,
       tradOnLTP,
-      tradeOpenPrice,
+      selectedEntryPrice,
       table,
       id,
       uniqTradeId,
       tradeMethod,
-      tradeClosePrice,
+      targetPrice,
       stopLoss,
+      actualEntryPrice,
     } = await req.json();
 
     try {
@@ -36,10 +37,11 @@ export async function POST(req, res) {
       validate_string(`${tradeTime}`, 'trade time');
       validate_string(`${tradeType}`, 'trade type');
       validate_string(`${tradOnLTP}`, 'tradOnLTP');
-      validate_string(`${tradeOpenPrice}`, 'target price');
+      validate_string(`${selectedEntryPrice}`, 'target price');
       validate_string(`${uniqTradeId}`, 'uniq tradeId');
       validate_string(`${tradeMethod}`, 'trade method');
-      validate_string(`${tradeClosePrice}`, 'close target');
+      validate_string(`${targetPrice}`, 'close target');
+      validate_string(`${actualEntryPrice}`, 'executed price');
       validate_string(`${stopLoss}`, 'stopLoss');
     } catch (e) {
       console.log('first', e);
@@ -52,11 +54,13 @@ export async function POST(req, res) {
     );
 
     if (tradeType == 0) {
-      tradeOpenPrice =
-        tradeOpenPrice + (tradeOpenPrice * brokerageData?.brokerage) / 100;
+      selectedEntryPrice =
+        selectedEntryPrice +
+        (selectedEntryPrice * brokerageData?.brokerage) / 100;
     } else if (tradeType == 1) {
-      tradeOpenPrice =
-        tradeOpenPrice - (tradeOpenPrice * brokerageData?.brokerage) / 100;
+      selectedEntryPrice =
+        selectedEntryPrice -
+        (selectedEntryPrice * brokerageData?.brokerage) / 100;
     }
     console.log({
       tradeTime: `${tradeTime}----------11-------${convert_date_upto_second(
@@ -71,19 +75,19 @@ export async function POST(req, res) {
 
     if (!isTradExist) {
       await sql_query(
-        'insert into activetrade (symbole,tradedPrice, uniqTradeId,tradeOpenPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,tradeMethod,tradeClosePrice,stopLoss,createdOn) values (?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        'insert into activetrade (symbole, actualEntryPrice,uniqTradeId,selectedEntryPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,tradeMethod,targetPrice,stopLoss,createdOn) values (?,?,?,?,?,?,?,?,?,?,?,?,?)',
         [
           symbole,
-          latestTradedPrice,
+          actualEntryPrice,
           uniqTradeId,
-          tradeOpenPrice,
+          selectedEntryPrice,
           quantity,
           tradOnLTP,
           tradeType,
           tradeTime,
           now,
           tradeMethod,
-          tradeClosePrice,
+          targetPrice,
           stopLoss,
           now,
         ],

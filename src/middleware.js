@@ -6,6 +6,8 @@ export async function middleware(request) {
   const authData = await getToken({
     req: request,
   });
+
+  console.log('hello');
   if (request.nextUrl.pathname == '/' + process.env.ADMFLDR) {
     if (authData?.email) {
       return NextResponse.redirect(

@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { use, useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import Table_Loader from '../../../../components/include/TableLoader';
@@ -23,13 +23,21 @@ const PandingOrderList = ({ option }) => {
     title: '',
     setMultiLoader: {},
     multiLoader: { PandingOrderLoader: true },
+    setStratagyTrade: () => {},
+    stratagyTrade: [],
   };
-  const { title, setMultiLoader, multiLoader } = option ? option : tempOption;
+  const {
+    title,
+    setMultiLoader,
+    multiLoader,
+    setStratagyTrade,
+    stratagyTrade,
+  } = option ? option : tempOption;
   const { setAuthTkn, setPageLoader } = useAuthContext();
   const [page, setPage] = useState(0);
   const [totalPage, setTotalPage] = useState(0);
   const [order, setOrder] = useState(1);
-  const [orderClm, setOrderClm] = useState(9);
+  const [orderClm, setOrderClm] = useState(0);
   const [searchLdr, setSearchLdr] = useState(false);
   const [notifyEmailList, setNotifyEmailList] = useState([]);
   const date = moment(new Date()).subtract(process.env.FILTERDAYS, 'days');
@@ -65,7 +73,7 @@ const PandingOrderList = ({ option }) => {
   const handleShow = coinData => {
     set_coin_modal_data({
       ...coinData,
-      tradeOpenPrice: coinData.latestTradedPrice,
+      selectedEntryPrice: coinData.latestTradedPrice,
       tradOnLTP: 1,
       quantity: 1,
     });
@@ -176,13 +184,13 @@ const PandingOrderList = ({ option }) => {
 
   const getProfitLossBadge = (
     tradeType,
-    tradeOpenPrice,
+    selectedEntryPrice,
     latestTradedPrice,
     quantity = 1,
   ) => {
     if (tradeType == 0) {
       const total =
-        parseFloat(latestTradedPrice - tradeOpenPrice) * parseInt(quantity);
+        parseFloat(latestTradedPrice - selectedEntryPrice) * parseInt(quantity);
       return (
         <span
           className={`badge bg-${total.toFixed(2) > 0 ? 'success' : 'danger'}`}
@@ -192,7 +200,7 @@ const PandingOrderList = ({ option }) => {
       );
     } else {
       const total =
-        parseFloat(tradeOpenPrice - latestTradedPrice) * parseInt(quantity);
+        parseFloat(selectedEntryPrice - latestTradedPrice) * parseInt(quantity);
       return (
         <span
           className={`badge bg-${total.toFixed(2) > 0 ? 'success' : 'danger'}`}
@@ -204,17 +212,17 @@ const PandingOrderList = ({ option }) => {
   };
   const getProfitLoss = (
     tradeType,
-    tradeOpenPrice,
+    selectedEntryPrice,
     latestTradedPrice,
     quantity = 1,
   ) => {
     if (tradeType == 0) {
       const total =
-        parseFloat(latestTradedPrice - tradeOpenPrice) * parseInt(quantity);
+        parseFloat(latestTradedPrice - selectedEntryPrice) * parseInt(quantity);
       return total.toFixed(2);
     } else {
       const total =
-        parseFloat(tradeOpenPrice - latestTradedPrice) * parseInt(quantity);
+        parseFloat(selectedEntryPrice - latestTradedPrice) * parseInt(quantity);
       return total.toFixed(2);
     }
   };
@@ -231,8 +239,8 @@ const PandingOrderList = ({ option }) => {
         validate_string(`${data.tradOnLTP}`, 'tradOnLTP');
         validate_string(`${data.quantity}`, 'quantity');
         validate_string(`${data.tradeMethod}`, 'trade method');
-        validate_string(`${data.tradeClosePrice}`, 'close target');
-        validate_string(`${data.tradeOpenPrice}`, 'target price');
+        validate_string(`${data.targetPrice}`, 'close target');
+        validate_string(`${data.selectedEntryPrice}`, 'target price');
         validate_string(`${data.uniqTradeId}`, 'uniq tradeId');
         validate_string(`${data.activeTradeId}`, 'panding order id');
         validate_string(
@@ -249,11 +257,7 @@ const PandingOrderList = ({ option }) => {
       }
 
       setLoading(true);
-      console.log(
-        `d====${data.activeTradeId}====================ata`,
-        data,
-        data.activeTradeId,
-      );
+
       let bodyData = {
         symbole: data.symbole,
         latestTradedPrice: data.latestTradedPrice,
@@ -263,12 +267,13 @@ const PandingOrderList = ({ option }) => {
         tradOnLTP: data.tradOnLTP,
         quantity: data.quantity,
         tradeMethod: data.tradeMethod,
-        tradeClosePrice: data.tradeClosePrice,
+        tradedPrice: data.tradedPrice,
+        targetPrice: data.targetPrice,
         stopLoss: data.stopLoss,
-        tradeOpenPrice: data.tradeOpenPrice,
+        selectedEntryPrice: data.selectedEntryPrice,
         uniqTradeId: data.uniqTradeId,
         id: data.id,
-        executedPrice: getCoinDetails(data?.symbole, 'latestTradedPrice'),
+        actualEntryPrice: getCoinDetails(data?.symbole, 'latestTradedPrice'),
         closedPrice: getCoinDetails(data?.symbole, 'latestTradedPrice'),
         table: 'pandingorder',
         badge: '---------------------',
@@ -313,7 +318,8 @@ const PandingOrderList = ({ option }) => {
         const maxPrice = currentPrice * (1 + n / 100);
 
         // Get the latest price of the crypto (You may need to call an API for this)
-        const latestPrice = crypto?.tradeOpenPrice; // Dummy function for fetching the latest price
+
+        const latestPrice = crypto?.selectedEntryPrice; // Dummy function for fetching the latest price
         // Check if the latest price is within the range
         if (latestPrice >= minPrice && latestPrice <= maxPrice) {
           // Execute the order if within range
@@ -328,11 +334,17 @@ const PandingOrderList = ({ option }) => {
 
   useEffect(() => {
     if (notifyEmailList?.length > 0) {
-      monitorCryptoPrices(notifyEmailList, 0.1, (crypto, latestPrice) => {
+      monitorCryptoPrices(notifyEmailList, 0.007, (crypto, latestPrice) => {
         console.log(crypto);
       });
     }
   }, [cryptoData]);
+  useEffect(() => {
+    if (stratagyTrade?.length > 0) {
+      console.log('add startratagyTrade', stratagyTrade);
+      setNotifyEmailList(prev => [...prev, ...stratagyTrade]);
+    }
+  }, [stratagyTrade]);
   return (
     <div className='content-body btn-page'>
       <Toaster position='top-right' reverseOrder={false} />
@@ -451,7 +463,7 @@ const PandingOrderList = ({ option }) => {
                           className='text-center cursor-pointer text-nowrap'
                           onClick={() => sortData(3, order == 0 ? 1 : 0)}
                         >
-                          Trade Open
+                          Selected Entry Price
                           <span className='iconPosition'>
                             <i className='fa fa-solid fa-sort-up position-absolute mx-1 mt-1 text-dull asc-3'></i>
                             <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-3'></i>
@@ -566,12 +578,12 @@ const PandingOrderList = ({ option }) => {
                                   )}
                                 </td>
                                 <td className='text-center text-nowrap'>
-                                  {d?.tradeOpenPrice ? d?.tradeOpenPrice : '-'}{' '}
+                                  {d?.selectedEntryPrice
+                                    ? d?.selectedEntryPrice
+                                    : '-'}{' '}
                                 </td>
                                 <td className='text-center text-nowrap'>
-                                  {d?.tradeClosePrice
-                                    ? d?.tradeClosePrice
-                                    : '-'}{' '}
+                                  {d?.targetPrice ? d?.targetPrice : '-'}{' '}
                                 </td>
                                 <td className='text-center text-nowrap'>
                                   {d?.stopLoss ? d?.stopLoss : '-'}{' '}
@@ -582,7 +594,7 @@ const PandingOrderList = ({ option }) => {
                                 <td className='text-center text-nowrap'>
                                   {getProfitLossBadge(
                                     d?.tradeType,
-                                    d?.tradeOpenPrice,
+                                    d?.selectedEntryPrice,
                                     getCoinDetails(
                                       d?.symbole,
                                       'latestTradedPrice',
@@ -820,12 +832,12 @@ const PandingOrderList = ({ option }) => {
                   <div className='input-group'>
                     <input
                       name='ltp'
-                      value={coin_modal_data?.tradeOpenPrice}
+                      value={coin_modal_data?.selectedEntryPrice}
                       type='text'
                       onChange={e =>
                         set_coin_modal_data({
                           ...coin_modal_data,
-                          tradeOpenPrice: e.target.value
+                          selectedEntryPrice: e.target.value
                             .replace(/[^0-9.]/g, '')
                             .replace(/(\..*)\./g, '$1'),
                         })

@@ -1,11 +1,8 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
-import Swal from 'sweetalert2';
 import Table_Loader from '../../../../components/include/TableLoader';
 import {
-  chk_password,
-  convert_date,
   convert_date_upto_second,
   generateTradeId,
   validate_string,
@@ -14,86 +11,98 @@ import { fetchApi } from '../../../../utils/frondend';
 import Loader from '../../../../components/include/Loader';
 import { useAuthContext } from '../../../../context/auth';
 import Modal from 'react-bootstrap/Modal';
-import { get } from 'jquery';
 const CoinList = ({ option }) => {
   const tempOption = {
     title: '',
     setMultiLoader: {},
     multiLoader: { TradeLoader: true },
+    setStratagyTrade: () => {},
+    stratagyTrade: [],
   };
-  const { title, setMultiLoader, multiLoader } = option ? option : tempOption;
+  const {
+    title,
+    setMultiLoader,
+    multiLoader,
+    setStratagyTrade,
+    stratagyTrade,
+  } = option ? option : tempOption;
   const { setAuthTkn, setPageLoader } = useAuthContext();
+  const [cryptoData, setCryptoData] = useState([]);
   const [show, setShow] = useState(false);
   const [loader, setLoader] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pre_coin_value, set_pre_coin_value] = useState();
   const [coin_modal_data, set_coin_modal_data] = useState({});
-  const [fields, setFields] = useState({
-    admPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
   const [orderExeutionPrice, setOrderExeutionPrice] = useState({
     stopLoss: 0,
-    tradeClosePrice: 0,
+    targetPrice: 0,
   });
 
   const handleClose = () => {
     setShow(false);
-    setFields({
-      admPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    });
   };
   const handleShow = coinData => {
     set_coin_modal_data({
       ...coinData,
-      tradeOpenPrice: coinData.latestTradedPrice,
+      selectedEntryPrice: coinData.latestTradedPrice,
       tradOnLTP: 1,
       quantity: 1,
       tradeMethod: 1,
-      tradeClosePrice: coinData.latestTradedPrice,
+      targetPrice: coinData.latestTradedPrice,
       stopLoss: coinData.latestTradedPrice,
     });
     setOrderExeutionPrice({
-      stopLoss: 0,
-      tradeClosePrice: 0,
+      stopLoss: 2,
+      targetPrice: 5,
     });
     setShow(true);
   };
+  const getCoinDetails = (symbole, field = 'latestTradedPrice') => {
+    try {
+      return cryptoData.filter(el => el.symbole == symbole)[0][field];
+    } catch (error) {
+      return 0;
+    }
+  };
+  const currentPrice = parseFloat(
+    getCoinDetails(coin_modal_data?.symbole, 'latestTradedPrice'),
+  );
+
+  const stopLosssFloat = parseFloat(
+    orderExeutionPrice.stopLoss != '' ? orderExeutionPrice.stopLoss : 0,
+  );
+
+  const targetPriceFloat = parseFloat(
+    orderExeutionPrice.targetPrice != '' ? orderExeutionPrice.targetPrice : 0,
+  );
   useEffect(() => {
-    const currentPrice = parseFloat(
-      getCoinDetails(coin_modal_data?.symbole, 'latestTradedPrice'),
-    );
-
-    const stopLosssFloat = parseFloat(
-      orderExeutionPrice.stopLoss != '' ? orderExeutionPrice.stopLoss : 0,
-    );
-
-    const tradeClosePriceFloat = parseFloat(
-      orderExeutionPrice.tradeClosePrice != ''
-        ? orderExeutionPrice.tradeClosePrice
-        : 0,
-    );
-    console.log(
-      currentPrice,
-      parseFloat(
-        orderExeutionPrice.stopLoss != '' ? orderExeutionPrice.stopLoss : 0,
-      ),
-    );
-
     set_coin_modal_data({
       ...coin_modal_data,
       stopLoss: parseFloat(
         currentPrice - (currentPrice * stopLosssFloat) / 100,
       ).toFixed(2),
 
-      tradeClosePrice: parseFloat(
-        currentPrice + (currentPrice * tradeClosePriceFloat) / 100,
+      targetPrice: parseFloat(
+        currentPrice + (currentPrice * targetPriceFloat) / 100,
       ).toFixed(2),
     });
   }, [orderExeutionPrice]);
+
+  useEffect(() => {
+    if (coin_modal_data?.tradeLimitOnPrc == 1) {
+      set_coin_modal_data({
+        ...coin_modal_data,
+        stopLoss: parseFloat(
+          currentPrice - (currentPrice * stopLosssFloat) / 100,
+        ).toFixed(2),
+
+        targetPrice: parseFloat(
+          currentPrice + (currentPrice * targetPriceFloat) / 100,
+        ).toFixed(2),
+      });
+    }
+  }, [orderExeutionPrice, cryptoData]);
+
   const handleSubmit = async data => {
     if (!loading) {
       try {
@@ -103,9 +112,9 @@ const CoinList = ({ option }) => {
         validate_string(`${data.tradeType}`, 'trade type');
         validate_string(`${data.tradOnLTP}`, 'tradOnLTP');
         validate_string(`${data.quantity}`, 'quantity');
-        validate_string(`${data.tradeOpenPrice}`, 'target price');
+        validate_string(`${data.selectedEntryPrice}`, 'target price');
         validate_string(`${data.tradeMethod}`, 'trade method');
-        validate_string(`${data.tradeClosePrice}`, 'close target');
+        validate_string(`${data.targetPrice}`, 'close target');
         validate_string(`${data.stopLoss}`, 'stopLoss');
       } catch (e) {
         toast.error(e);
@@ -120,13 +129,17 @@ const CoinList = ({ option }) => {
         tradeTime: data.tradeTime,
         tradeType: data.tradeType == 'buy' ? 0 : 1,
         tradOnLTP: data.tradOnLTP,
-        tradeOpenPrice: getCoinDetails(
+        actualEntryPrice: getCoinDetails(
           coin_modal_data?.symbole,
           'latestTradedPrice',
         ),
+        selectedEntryPrice:
+          data.tradOnLTP == 1
+            ? getCoinDetails(coin_modal_data?.symbole, 'latestTradedPrice')
+            : data.selectedEntryPrice,
         uniqTradeId: generateTradeId(data.latestTradedPrice),
         tradeMethod: data.tradeMethod,
-        tradeClosePrice: data.tradeClosePrice,
+        targetPrice: data.targetPrice,
         stopLoss: data.tradeMethod == 0 ? 0 : data.stopLoss,
       };
       const add_user = await fetchApi(
@@ -156,8 +169,6 @@ const CoinList = ({ option }) => {
     }
   };
 
-  const [cryptoData, setCryptoData] = useState([]);
-
   useEffect(() => {
     const ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
 
@@ -179,13 +190,7 @@ const CoinList = ({ option }) => {
       ws.close();
     };
   }, []);
-  const getCoinDetails = (symbole, field = 'latestTradedPrice') => {
-    try {
-      return cryptoData.filter(el => el.symbole == symbole)[0][field];
-    } catch (error) {
-      return 0;
-    }
-  };
+
   useEffect(() => {
     setPageLoader(false);
   }, []);
@@ -193,6 +198,28 @@ const CoinList = ({ option }) => {
   useEffect(() => {
     set_pre_coin_value(getCoinDetails('BTCUSDT', 'latestTradedPrice'));
   }, [cryptoData]);
+
+  const addStratagy = () => {
+    setStratagyTrade([
+      {
+        num: 1,
+        symbole: 'BTCUSDT',
+        isStrtagyTrade: 1,
+        actualEntryPrice: 62716.02,
+        selectedEntryPrice: 72707.2,
+        quantity: 1,
+        tradeOnLTP: 0,
+        tradeType: 0,
+        tradeMethod: 1,
+        targetPrice: 65842.56,
+        stopLoss: 61453.06,
+        uniqTradeId: '17289116263032708',
+        tradeTime: 1728825261931,
+        orderExecuteTime: 1728911627363,
+        createdOn: 1728911627363,
+      },
+    ]);
+  };
   return (
     <div className='content-body btn-page'>
       <Toaster position='top-right' reverseOrder={false} />
@@ -207,17 +234,7 @@ const CoinList = ({ option }) => {
               {title == 'incard' && (
                 <div className='card-header d-flex align-items-center '>
                   <span className='mdi mdi-bitcoin  dashboard-voucher-icon' />
-                  <h3
-                    onClick={() =>
-                      console.log(
-                        getCoinDetails('BTCUSDT', 'latestTradedPrice'),
-                        pre_coin_value,
-                      )
-                    }
-                  >
-                    {' '}
-                    Manage Coin
-                  </h3>
+                  <h3 onClick={addStratagy}> Manage Coin</h3>
                 </div>
               )}
               <div className='card-body'>
@@ -455,18 +472,18 @@ const CoinList = ({ option }) => {
             <>
               <div className='mb-2'>
                 <div>
-                  <label className='col-form-label'>Enter Target Price</label>
+                  <label className='col-form-label'>Enter Entry Price</label>
                 </div>
                 <div className={`inputContainer form-group d-flex w-100`}>
                   <div className='input-group'>
                     <input
                       name='ltp'
-                      value={coin_modal_data?.tradeOpenPrice}
+                      value={coin_modal_data?.selectedEntryPrice}
                       type='text'
                       onChange={e =>
                         set_coin_modal_data({
                           ...coin_modal_data,
-                          tradeOpenPrice: e.target.value
+                          selectedEntryPrice: e.target.value
                             .replace(/[^0-9.]/g, '')
                             .replace(/(\..*)\./g, '$1'),
                         })
@@ -515,20 +532,19 @@ const CoinList = ({ option }) => {
             <>
               <div className='mb-2'>
                 <div>
-                  <label className='col-form-label'>
-                    Enter Close Target Price
-                  </label>
+                  <label className='col-form-label'>Enter Target Price</label>
                 </div>
                 <div className={`inputContainer form-group d-flex w-100`}>
                   <div className='input-group'>
                     <input
                       name='ltp'
-                      value={coin_modal_data?.tradeClosePrice}
+                      value={coin_modal_data?.targetPrice}
                       type='text'
+                      disabled={coin_modal_data.tradeLimitOnPrc == 1}
                       onChange={e =>
                         set_coin_modal_data({
                           ...coin_modal_data,
-                          tradeClosePrice: e.target.value
+                          targetPrice: e.target.value
                             .replace(/[^0-9.]/g, '')
                             .replace(/(\..*)\./g, '$1'),
                         })
@@ -552,6 +568,7 @@ const CoinList = ({ option }) => {
                     <input
                       name='ltp'
                       value={coin_modal_data?.stopLoss}
+                      disabled={coin_modal_data.tradeLimitOnPrc == 1}
                       type='text'
                       onChange={e =>
                         set_coin_modal_data({
@@ -572,50 +589,77 @@ const CoinList = ({ option }) => {
                 </div>
               </div>
               <div className='mb-2'>
-                <div>
+                <div className='  d-flex justify-content-between align-items-center'>
                   <label className='col-form-label'>
                     Stoploss/Target in prc
                   </label>
+                  <span
+                    className={
+                      coin_modal_data.tradeLimitOnPrc == 1 ? '' : 'togggleOff'
+                    }
+                    onClick={() =>
+                      set_coin_modal_data({
+                        ...coin_modal_data,
+                        tradeLimitOnPrc:
+                          coin_modal_data.tradeLimitOnPrc == 1 ? 0 : 1,
+                      })
+                    }
+                  >
+                    <span className='switchery switchery-small'>
+                      <small></small>
+                    </span>
+                    <input
+                      type='checkbox'
+                      defaultChecked={false}
+                      data-plugin='switchery'
+                      data-color='#ff7aa3'
+                      className='d-none'
+                      data-switchery='true'
+                    />
+                  </span>
                 </div>
+                {coin_modal_data.tradeLimitOnPrc == 1 && (
+                  <>
+                    <div className={`inputContainer form-group d-flex w-100`}>
+                      <div className='input-group'>
+                        <input
+                          name='stoploss in prc'
+                          value={orderExeutionPrice.stopLoss}
+                          type='text'
+                          onChange={e =>
+                            setOrderExeutionPrice({
+                              ...orderExeutionPrice,
+                              stopLoss: e.target.value
+                                .replace(/[^0-9.]/g, '')
+                                .replace(/(\..*)\./g, '$1'),
+                            })
+                          }
+                          className='form-control'
+                        />
+                        <input
+                          name='close target in prc'
+                          value={orderExeutionPrice.targetPrice}
+                          type='text'
+                          onChange={e =>
+                            setOrderExeutionPrice({
+                              ...orderExeutionPrice,
+                              targetPrice: e.target.value
+                                .replace(/[^0-9.]/g, '')
+                                .replace(/(\..*)\./g, '$1'),
+                            })
+                          }
+                          className='form-control'
+                        />
 
-                <div className={`inputContainer form-group d-flex w-100`}>
-                  <div className='input-group'>
-                    <input
-                      name='stoploss in prc'
-                      value={orderExeutionPrice.stopLoss}
-                      type='text'
-                      onChange={e =>
-                        setOrderExeutionPrice({
-                          ...orderExeutionPrice,
-                          stopLoss: e.target.value
-                            .replace(/[^0-9.]/g, '')
-                            .replace(/(\..*)\./g, '$1'),
-                        })
-                      }
-                      className='form-control'
-                    />
-                    <input
-                      name='close target in prc'
-                      value={orderExeutionPrice.tradeClosePrice}
-                      type='text'
-                      onChange={e =>
-                        setOrderExeutionPrice({
-                          ...orderExeutionPrice,
-                          tradeClosePrice: e.target.value
-                            .replace(/[^0-9.]/g, '')
-                            .replace(/(\..*)\./g, '$1'),
-                        })
-                      }
-                      className='form-control'
-                    />
-
-                    <div className='input-group-append'>
-                      <div className='input-group-text' id='btnGroupAddon'>
-                        <i className={`${`   mdi mdi-percent  fs-4`}`}></i>{' '}
+                        <div className='input-group-append'>
+                          <div className='input-group-text' id='btnGroupAddon'>
+                            <i className={`${`   mdi mdi-percent  fs-4`}`}></i>{' '}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
             </>
           )}

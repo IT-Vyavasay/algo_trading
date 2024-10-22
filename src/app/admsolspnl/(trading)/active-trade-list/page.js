@@ -8,6 +8,7 @@ import {
   chk_password,
   convert_date,
   convert_date_upto_second,
+  generateTradeId,
   validate_string,
 } from '../../../../utils/common';
 import { fetchApi } from '../../../../utils/frondend';
@@ -30,7 +31,7 @@ const TradeList = ({ option }) => {
   const [page, setPage] = useState(0);
   const [totalPage, setTotalPage] = useState(0);
   const [order, setOrder] = useState(1);
-  const [orderClm, setOrderClm] = useState(9);
+  const [orderClm, setOrderClm] = useState(0);
   const [searchLdr, setSearchLdr] = useState(false);
   const [notifyEmailList, setNotifyEmailList] = useState([]);
   const date = moment(new Date()).subtract(process.env.FILTERDAYS, 'days');
@@ -66,7 +67,7 @@ const TradeList = ({ option }) => {
   const handleShow = coinData => {
     set_coin_modal_data({
       ...coinData,
-      tradeOpenPrice: coinData.latestTradedPrice,
+      selectedEntryPrice: coinData.latestTradedPrice,
       tradOnLTP: 1,
       quantity: 1,
     });
@@ -177,13 +178,13 @@ const TradeList = ({ option }) => {
 
   const getProfitLossBadge = (
     tradeType,
-    tradeOpenPrice,
+    selectedEntryPrice,
     latestTradedPrice,
     quantity = 1,
   ) => {
     if (tradeType == 0) {
       const total =
-        parseFloat(latestTradedPrice - tradeOpenPrice) * parseInt(quantity);
+        parseFloat(latestTradedPrice - selectedEntryPrice) * parseInt(quantity);
       return (
         <span
           className={`badge bg-${total.toFixed(2) > 0 ? 'success' : 'danger'}`}
@@ -193,7 +194,7 @@ const TradeList = ({ option }) => {
       );
     } else {
       const total =
-        parseFloat(tradeOpenPrice - latestTradedPrice) * parseInt(quantity);
+        parseFloat(selectedEntryPrice - latestTradedPrice) * parseInt(quantity);
       return (
         <span
           className={`badge bg-${total.toFixed(2) > 0 ? 'success' : 'danger'}`}
@@ -205,21 +206,92 @@ const TradeList = ({ option }) => {
   };
   const getProfitLoss = (
     tradeType,
-    tradeOpenPrice,
+    selectedEntryPrice,
     latestTradedPrice,
     quantity = 1,
   ) => {
+    console.log('---------------------quantity', {
+      latestTradedPrice,
+      selectedEntryPrice,
+      quantity,
+    });
     if (tradeType == 0) {
       const total =
-        parseFloat(latestTradedPrice - tradeOpenPrice) * parseInt(quantity);
+        parseFloat(latestTradedPrice - selectedEntryPrice) * parseInt(quantity);
+
       return total.toFixed(2);
     } else {
       const total =
-        parseFloat(tradeOpenPrice - latestTradedPrice) * parseInt(quantity);
+        parseFloat(selectedEntryPrice - latestTradedPrice) * parseInt(quantity);
       return total.toFixed(2);
     }
   };
+  const AddTradeAgain = async data => {
+    console.log(data);
+    // if (!loading) {
+    try {
+      validate_string(`${data.symbole}`, 'symbole');
+      validate_string(`${data.latestTradedPrice}`, 'latest tradedP price');
+      validate_string(`${data.tradeTime}`, 'trade time');
+      validate_string(`${data.tradeType}`, 'trade type');
+      validate_string(`${data.tradOnLTP}`, 'tradOnLTP');
+      validate_string(`${data.quantity}`, 'quantity');
+      validate_string(`${data.selectedEntryPrice}`, 'target price');
+      validate_string(`${data.tradeMethod}`, 'trade method');
+      validate_string(`${data.targetPrice}`, 'close target');
+      validate_string(`${data.stopLoss}`, 'stopLoss');
+    } catch (e) {
+      toast.error(e);
+      return false;
+    }
 
+    // setLoading(true);
+    let bodyData = {
+      symbole: data.symbole,
+      latestTradedPrice: data.latestTradedPrice,
+      quantity: data.quantity,
+      tradeTime: data.tradeTime,
+      tradeType: data.tradeType == 'buy' ? 0 : 1,
+      tradOnLTP: data.tradOnLTP,
+      actualEntryPrice: getCoinDetails(
+        coin_modal_data?.symbole,
+        'latestTradedPrice',
+      ),
+      selectedEntryPrice:
+        data.tradOnLTP == 1
+          ? getCoinDetails(coin_modal_data?.symbole, 'latestTradedPrice')
+          : data.selectedEntryPrice,
+      uniqTradeId: generateTradeId(data.latestTradedPrice),
+      tradeMethod: data.tradeMethod,
+      targetPrice: data.targetPrice,
+      stopLoss: data.tradeMethod == 0 ? 0 : data.stopLoss,
+    };
+    const add_user = await fetchApi(
+      data.tradOnLTP == 1
+        ? 'trading/manage-trade/add-trade'
+        : 'trading/manage-trade/panding-order/add-panding-order',
+      JSON.stringify(bodyData),
+    );
+    setLoading(false);
+    if (add_user?.statusCode == 200) {
+      toast.success(add_user?.data?.message);
+      set_coin_modal_data({});
+      const loadeData =
+        data.tradOnLTP == 1 ? 'TradeLoader' : 'PandingOrderLoader';
+      setMultiLoader({
+        ...multiLoader,
+        [loadeData]: !multiLoader[loadeData],
+      });
+      handleClose();
+    } else {
+      if (add_user.data.message == 'Unauthorized') {
+        setAuthTkn(add_user.data.message);
+      } else {
+        toast.error(add_user.data.message);
+      }
+    }
+    // }
+  };
   const handleSubmit = async data => {
     console.log(data);
     if (!loading) {
@@ -232,14 +304,16 @@ const TradeList = ({ option }) => {
         validate_string(`${data.tradOnLTP}`, 'tradOnLTP');
         validate_string(`${data.quantity}`, 'quantity');
         validate_string(`${data.tradeMethod}`, 'trade method');
-        validate_string(`${data.tradeClosePrice}`, 'close target');
-        validate_string(`${data.tradeOpenPrice}`, 'target price');
+        validate_string(`${data.executedPrice}`, 'executedPrice');
+        validate_string(`${data.targetPrice}`, 'close target');
+        validate_string(`${data.selectedEntryPrice}`, 'entry price');
         validate_string(`${data.uniqTradeId}`, 'uniq tradeId');
+        validate_string(`${data.message}`, 'message');
         validate_string(`${data.activeTradeId}`, 'panding order id');
         validate_string(
           getProfitLoss(
             data?.tradeType,
-            data?.tradeOpenPrice,
+            data?.selectedEntryPrice,
             getCoinDetails(data?.symbole, 'latestTradedPrice'),
             data?.quantity,
           ),
@@ -265,27 +339,31 @@ const TradeList = ({ option }) => {
         tradedQunaty: data.tradedQunaty,
         tradeTime: data.tradeTime,
         tradeType: data.tradeType,
+        executedPrice: data.executedPrice,
         tradOnLTP: data.tradOnLTP,
         quantity: data.quantity,
-        tradeOpenPrice: data.tradeOpenPrice,
+        selectedEntryPrice: data.selectedEntryPrice,
         id: data.id,
+        message: data.message,
         uniqTradeId: data.uniqTradeId,
         stopLoss: data.tradeMethod == 1 ? data.stopLoss : 0,
         tradeMethod: data.tradeMethod,
-        tradeClosePrice: data.tradeClosePrice,
+        targetPrice: data.targetPrice,
         profit: getProfitLoss(
           data?.tradeType,
-          data?.tradeOpenPrice,
+          data?.selectedEntryPrice,
           getCoinDetails(data?.symbole, 'latestTradedPrice'),
           data?.quantity,
         ),
-        executedPrice: getCoinDetails(data?.symbole, 'latestTradedPrice'),
+        actualEntryPrice: data?.actualEntryPrice,
         closedPrice: getCoinDetails(data?.symbole, 'latestTradedPrice'),
       };
       const add_user = await fetchApi(
         'trading/manage-trade/close-trade',
         JSON.stringify(bodyData),
       );
+      console.log('sasahd', JSON.parse(add_user?.data?.parseData));
+      AddTradeAgain(JSON.parse(add_user?.data?.parseData));
       setLoading(false);
       setSelectRecId('');
       GetNotifyEmailList();
@@ -323,29 +401,19 @@ const TradeList = ({ option }) => {
           const maxPrice = currentPrice + percentValue;
 
           // Get the latest price of the crypto (You may need to call an API for this)
-          const tradeClosePrice = crypto?.tradeClosePrice; // Dummy function for fetching the latest price
+          const targetPrice = crypto?.targetPrice; // Dummy function for fetching the latest price
           const stopLossPrice = crypto?.stopLoss; // Dummy function for fetching the latest price
           // Check if the latest price is within the range
-          console.log('crypto', crypto);
-          console.log('minPrice, maxPrice', { maxPrice, minPrice });
-          console.log('tradeClosePrice , stopLossPrice', 'tradeOpenPrice', {
-            tradeClosePrice,
-            stopLossPrice,
-            tradeOpenPrice: crypto?.tradeOpenPrice,
-          });
-          if (tradeClosePrice >= minPrice && tradeClosePrice <= maxPrice) {
+
+          if (targetPrice >= minPrice && targetPrice <= maxPrice) {
             // Execute the order if within range
             setCryptoData(cryptoData.filter(el => el.id != crypto.id));
             setSelectRecId(crypto.id);
-            handleSubmit(crypto);
-            toast.success('Target price reached.');
+            handleSubmit({ ...crypto, message: 'Target price reached.' });
           } else if (stopLossPrice >= minPrice && stopLossPrice <= maxPrice) {
-            toast.error(
-              'Stop loss price reached. Please check your stop loss price.',
-            );
             setCryptoData(cryptoData.filter(el => el.id != crypto.id));
             setSelectRecId(crypto.id);
-            handleSubmit(crypto);
+            handleSubmit({ ...crypto, message: 'Stop loss price reached.' });
           }
         }
       });
@@ -355,7 +423,7 @@ const TradeList = ({ option }) => {
 
   useEffect(() => {
     if (notifyEmailList?.length > 0) {
-      monitorCryptoPrices(notifyEmailList, 0.01, crypto => {
+      monitorCryptoPrices(notifyEmailList, 0.007, crypto => {
         console.log(crypto);
       });
     }
@@ -482,7 +550,18 @@ const TradeList = ({ option }) => {
                           className='text-center cursor-pointer text-nowrap'
                           onClick={() => sortData(3, order == 0 ? 1 : 0)}
                         >
-                          Trade Open
+                          Selected Entry Price
+                          <span className='iconPosition'>
+                            <i className='fa fa-solid fa-sort-up position-absolute mx-1 mt-1 text-dull asc-3'></i>
+                            <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-3'></i>
+                          </span>
+                        </th>
+                        <th
+                          scope='col'
+                          className='text-center cursor-pointer text-nowrap'
+                          onClick={() => sortData(3, order == 0 ? 1 : 0)}
+                        >
+                          Actual Entry Price
                           <span className='iconPosition'>
                             <i className='fa fa-solid fa-sort-up position-absolute mx-1 mt-1 text-dull asc-3'></i>
                             <i className='fa fa-solid fa-sort-down position-absolute mx-1 mt-1 text-dull desc-3'></i>
@@ -597,12 +676,18 @@ const TradeList = ({ option }) => {
                                   )}
                                 </td>
                                 <td className='text-center text-nowrap'>
-                                  {d?.tradeOpenPrice ? d?.tradeOpenPrice : '-'}{' '}
+                                  {d?.selectedEntryPrice
+                                    ? d?.selectedEntryPrice
+                                    : '-'}{' '}
                                 </td>
                                 <td className='text-center text-nowrap'>
-                                  {d?.tradeClosePrice
-                                    ? d?.tradeClosePrice
+                                  {d?.actualEntryPrice
+                                    ? d?.actualEntryPrice
                                     : '-'}{' '}
+                                </td>
+
+                                <td className='text-center text-nowrap'>
+                                  {d?.targetPrice ? d?.targetPrice : '-'}{' '}
                                 </td>
                                 <td className='text-center text-nowrap'>
                                   {d?.stopLoss ? d?.stopLoss : '-'}{' '}
@@ -613,7 +698,7 @@ const TradeList = ({ option }) => {
                                 <td className='text-center text-nowrap'>
                                   {getProfitLossBadge(
                                     d?.tradeType,
-                                    d?.tradeOpenPrice,
+                                    d?.selectedEntryPrice,
                                     getCoinDetails(
                                       d?.symbole,
                                       'latestTradedPrice',
@@ -639,7 +724,10 @@ const TradeList = ({ option }) => {
                                     ? convert_date_upto_second(d?.tradeTime)
                                     : '-'}{' '}
                                 </td>
-                                <td className='text-center text-nowrap'>
+                                <td
+                                  className='text-center text-nowrap'
+                                  onClick={() => console.log(d)}
+                                >
                                   {d?.orderExecuteTime
                                     ? convert_date_upto_second(
                                         d?.orderExecuteTime,
@@ -851,12 +939,12 @@ const TradeList = ({ option }) => {
                   <div className='input-group'>
                     <input
                       name='ltp'
-                      value={coin_modal_data?.tradeOpenPrice}
+                      value={coin_modal_data?.selectedEntryPrice}
                       type='text'
                       onChange={e =>
                         set_coin_modal_data({
                           ...coin_modal_data,
-                          tradeOpenPrice: e.target.value
+                          selectedEntryPrice: e.target.value
                             .replace(/[^0-9.]/g, '')
                             .replace(/(\..*)\./g, '$1'),
                         })

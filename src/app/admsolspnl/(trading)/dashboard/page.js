@@ -11,6 +11,7 @@ import PandingOrderList from '../panding-order-list/page';
 
 export default function Dashboard() {
   const { setAuthTkn, setPageLoader } = useAuthContext();
+  const [stratagyTrade, setStratagyTrade] = useState([]);
   const [loader, setLoader] = useState(false);
   const [clearLoader, setClearLoader] = useState(false);
   const [multiLoader, setMultiLoader] = useState({
@@ -148,6 +149,8 @@ export default function Dashboard() {
                   title: 'incard',
                   multiLoader: multiLoader,
                   setMultiLoader,
+                  setStratagyTrade,
+                  stratagyTrade,
                 }}
               />
               <TradeList
@@ -169,6 +172,8 @@ export default function Dashboard() {
                   title: 'incard',
                   multiLoader: multiLoader,
                   setMultiLoader,
+                  setStratagyTrade,
+                  stratagyTrade,
                 }}
               />
               <div className='p-4'></div>

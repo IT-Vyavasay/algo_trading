@@ -22,13 +22,14 @@ export async function GET(req, res) {
     let query = '',
       filter = [],
       limit = process.env.PAGELIMIT;
-    query += `SELECT symbole,tradedPrice, tradeOpenPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,profit,stopLoss,tradeClosePrice,executedPrice,createdOn FROM closetrade`;
+    query += `SELECT symbole,closedPrice,executedPrice, selectedEntryPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,profit,stopLoss,targetPrice,actualEntryPrice,createdOn FROM closetrade`;
 
     let fields = [
       'createdOn',
       'symbole',
       'closedPrice',
       'profit',
+      'executedPrice',
       'quantity',
       'tradeOnLTP',
       'tradeType',
@@ -72,8 +73,9 @@ export async function GET(req, res) {
         return {
           num: order == 1 ? ++ascNum : descNum--,
           symbole: j.symbole ? j.symbole : '',
-          tradedPrice: j.tradedPrice ? j.tradedPrice : '',
-          tradeOpenPrice: j.tradeOpenPrice ? j.tradeOpenPrice : '',
+          closedPrice: j.closedPrice ? j.closedPrice : '',
+          executedPrice: j?.executedPrice ? j?.executedPrice : '',
+          selectedEntryPrice: j.selectedEntryPrice ? j.selectedEntryPrice : '',
           quantity: j.quantity ? j.quantity : '',
           tradeOnLTP: j.tradeOnLTP ? j.tradeOnLTP : '',
           tradeType: j.tradeType,
@@ -82,8 +84,8 @@ export async function GET(req, res) {
           createdOn: j.createdOn ? j.createdOn : '',
           profit: j.profit ? j.profit : '',
           stopLoss: j.stopLoss ? j.stopLoss : '',
-          executedPrice: j.executedPrice ? j.executedPrice : '',
-          tradeClosePrice: j.tradeClosePrice ? j.tradeClosePrice : '',
+          actualEntryPrice: j.actualEntryPrice ? j.actualEntryPrice : '',
+          targetPrice: j.targetPrice ? j.targetPrice : '',
         };
       });
     }

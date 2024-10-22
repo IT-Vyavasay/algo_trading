@@ -12,30 +12,56 @@ export async function POST(req, res) {
       symbole,
       latestTradedPrice,
       profit,
-      tradeClosePrice,
       executedPrice,
+      closedPrice,
+      targetPrice,
+      actualEntryPrice,
       quantity,
       tradeTime,
       tradeType,
       tradOnLTP,
-      tradeOpenPrice,
+      selectedEntryPrice,
       id,
       table,
       uniqTradeId,
       stopLoss,
+      message,
     } = await req.json();
+
+    const parseData = JSON.stringify({
+      symbole,
+      latestTradedPrice,
+      profit,
+      executedPrice,
+      closedPrice,
+      targetPrice,
+      actualEntryPrice,
+      quantity,
+      tradeTime,
+      tradeType,
+      tradOnLTP,
+      selectedEntryPrice,
+      id,
+      table,
+      uniqTradeId,
+      stopLoss,
+      message,
+    });
     try {
       validate_string(`${symbole}`, 'symbole');
       validate_string(`${latestTradedPrice}`, 'latest tradedP price');
+      validate_string(`${executedPrice}`, 'executedPrice');
       validate_string(`${quantity}`, 'quantity');
+      validate_string(`${closedPrice}`, 'closedPrice');
       validate_string(`${profit}`, 'profit');
-      validate_string(`${tradeClosePrice}`, 'closed price');
-      validate_string(`${executedPrice}`, 'executed price');
+      validate_string(`${targetPrice}`, 'closed price');
+      validate_string(`${actualEntryPrice}`, 'actual Entry Price');
       validate_string(`${tradeTime}`, 'trade time');
+      validate_string(`${message}`, 'message');
       validate_string(`${tradeType}`, 'trade type');
       validate_string(`${tradOnLTP}`, 'tradOnLTP');
       validate_string(`${uniqTradeId}`, 'uniqTrade Id');
-      validate_string(`${tradeOpenPrice}`, 'target price');
+      validate_string(`${selectedEntryPrice}`, 'selected Entry Price');
       validate_string(`${stopLoss}`, 'stopLoss');
       validate_string(id ? `${id}` : '', 'record id');
     } catch (e) {
@@ -49,11 +75,11 @@ export async function POST(req, res) {
     );
 
     if (tradeType == 0) {
-      tradeClosePrice =
-        tradeClosePrice - (tradeClosePrice * brokerageData?.brokerage) / 100;
+      targetPrice =
+        targetPrice - (targetPrice * brokerageData?.brokerage) / 100;
     } else if (tradeType == 1) {
-      tradeClosePrice =
-        tradeClosePrice + (tradeClosePrice * brokerageData?.brokerage) / 100;
+      targetPrice =
+        targetPrice + (targetPrice * brokerageData?.brokerage) / 100;
     }
     const isTradExist = await sql_query(
       'select * from closetrade where uniqTradeId = ?',
@@ -62,12 +88,14 @@ export async function POST(req, res) {
 
     if (!isTradExist) {
       await sql_query(
-        'insert into closetrade (symbole,tradedPrice, uniqTradeId,tradeOpenPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,createdOn, profit, tradeClosePrice, executedPrice,stopLoss) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        'insert into closetrade (symbole,executedPrice,closedPrice, tradedPrice, uniqTradeId,selectedEntryPrice,quantity,tradeOnLTP,tradeType,tradeTime, orderExecuteTime,createdOn, profit, targetPrice, actualEntryPrice,stopLoss) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
         [
           symbole,
+          executedPrice,
+          closedPrice,
           latestTradedPrice,
           uniqTradeId,
-          tradeOpenPrice,
+          selectedEntryPrice,
           quantity,
           tradOnLTP,
           tradeType,
@@ -75,12 +103,11 @@ export async function POST(req, res) {
           now,
           now,
           profit,
-          tradeClosePrice,
-          executedPrice,
+          targetPrice,
+          actualEntryPrice,
           stopLoss,
         ],
       );
-      console.log('pand================================ingorder', table);
       if (table == 'pandingorder') {
         await sql_query('delete from pandingorder where activeTradeId = ?', [
           id,
@@ -93,7 +120,7 @@ export async function POST(req, res) {
         console.log('order deleted from activetrade');
       }
       return NextResponse.json(
-        { message: 'Order closed successfully' },
+        { message: message ?? 'Order closed successfully', parseData },
         { status: 200 },
       );
     }

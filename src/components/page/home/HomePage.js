@@ -101,7 +101,7 @@ const HomePage = () => {
         {
           ...updateTrade,
           status: 1,
-          executedPrice: price,
+          actualEntryPrice: price,
           executedTime: getCurrentTimestamp(),
           profit:
             updateTrade.type == 2
@@ -118,7 +118,7 @@ const HomePage = () => {
         {
           ...updateTrade,
           status: 1,
-          executedPrice: price,
+          actualEntryPrice: price,
           executedTime: getCurrentTimestamp(),
           profit:
             updateTrade.type == 2
